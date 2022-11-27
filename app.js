@@ -9,7 +9,8 @@ const xss = require('xss-clean');
 // const hpp = require('hpp');
 const cors = require('cors');
 
-const usersRouter = require('./routes/users');
+const usersRouter = require('./routes/userRoutes');
+const auth0Router = require('./routes/auth0Routes');
 
 const app = express();
 
@@ -33,6 +34,7 @@ app.use(cookieParser());
 
 app.use(mongoSanitize());
 
+app.use(auth0Router);
 app.use('/users', usersRouter);
 app.use(xss());
 
@@ -60,9 +62,10 @@ app.use((err, req, res, next) => {
   res.locals.message = err.message;
   res.locals.error = req.app.get('env') === 'development' ? err : {};
 
+  console.log(err);
   // render the error page
   res.status(err.status || 500);
-  res.send('heyaa');
+  res.send('hey');
 });
 
 module.exports = app;
