@@ -1,10 +1,20 @@
 const crypto = require('crypto');
 const { promisify } = require('util');
 const jwt = require('jsonwebtoken');
+const axios = require('axios');
+const { ManagementClient, Role } = require('auth0');
 const User = require('../models/userModel');
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
 const Email = require('../utils/email');
+
+const management = new ManagementClient({
+  domain: process.env.AUTH0_DOMAIN,
+  clientId: process.env.AUTH0_CLIENT_ID,
+  clientSecret: process.env.AUTH0_CLIENT_SECRET,
+  scope:
+    'read:users update:users create:users create:users_app_metadata delete:users delete:users_app_metadata',
+});
 
 exports.login = (req, res, next) => {
   res.oidc.login({ returnTo: '/profile' });
@@ -18,17 +28,32 @@ exports.profile = (req, res, next) => {
   });
 };
 
-exports.signup = catchAsync(async (req, res, next) => {
-  const newUser = await User.create({
-    name: req.body.name,
-    email: req.body.email,
-    password: req.body.password,
-    passwordConfirm: req.body.passwordConfirm,
-  });
+exports.changeEmail = catchAsync(async (email) => {
+  //https://auth0.com/docs/api/management/v2?_ga=2.6505458.1101709205.1669532551-70858577.1669382726&_gl=1*unwwfo*rollup_ga*NzA4NTg1NzcuMTY2OTM4MjcyNg..*rollup_ga_F1G3E656YZ*MTY2OTYxODkwMy4xMC4xLjE2Njk2MjAyMDAuNTcuMC4w#!/Users/patch_users_by_id
+  //update email verified and verify email to receive email verification
+});
 
-  const url = `${req.protocol}://${req.get('host')}/me`;
-  // console.log(url);
-  await new Email(newUser, url).sendWelcome();
+exports.updateNewCreatedUser = (auth0Id, appMetadata) =>
+  management.updateUser({ id: auth0Id }, { app_metadata: { ...appMetadata } });
+
+exports.sendPasswordResetEmail = catchAsync(async (email) => {
+  //TODO: check if email exists
+  const options = {
+    method: 'POST',
+    url: `https://${process.env.AUTH0_ISSUER_BASE_URL}/dbconnections/change_password`,
+    headers: { 'content-type': 'application/json' },
+    data: {
+      client_id: process.env.AUTH_CLIENT_ID,
+      email,
+      connection: 'Username-Password-Authentication',
+    },
+  };
+
+  const response = await axios.post(options.url, options.data);
+  console.log(response.data);
+  return {
+    returnStatusValue: response.data,
+  };
 });
 
 // exports.login = catchAsync(async (req, res, next) => {

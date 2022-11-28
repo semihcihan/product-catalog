@@ -1,9 +1,62 @@
 const multer = require('multer');
 const sharp = require('sharp');
+const jwt_decode = require('jwt-decode');
+
 const User = require('../models/userModel');
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
 const factory = require('./handlerFactory');
+const authController = require('./authController');
+
+const AUTHORIZATION_HEADER = 'authorization';
+const BEARER = 'Bearer';
+
+exports.extractUserFromAccessToken = (req, res, next) => {
+  if (
+    req.headers[AUTHORIZATION_HEADER] &&
+    req.headers[AUTHORIZATION_HEADER].indexOf(BEARER) > -1
+  ) {
+    try {
+      req.user = jwt_decode(req.headers[AUTHORIZATION_HEADER].split(BEARER)[1]);
+      next();
+    } catch (err) {
+      res.status(500).send(err);
+    }
+  } else {
+    next();
+  }
+};
+
+exports.createUser = catchAsync(async (req, res, next) => {
+  console.log(req.user);
+  const newUser = await User.create({
+    firstName: req.body.firstName,
+    lastName: req.body.lastName,
+    gender: req.body.gender,
+    phone: req.body.phone,
+    username: req.body.username,
+    birthDate: req.body.birthDate,
+    email: req.body.email,
+    avatar: req.body.avatar,
+    role: req.body.role,
+    status: req.body.status,
+    addresses: req.body.addresses,
+  });
+
+  authController.updateNewCreatedUser(req.user.sub, { appUserId: newUser._id });
+
+  res.status(201).json({
+    status: 'success',
+    data: newUser,
+  });
+});
+
+exports.getUser = catchAsync(async (req, res, next) => {
+  console.log(req.user);
+  res.status(201).json({
+    status: 'success',
+  });
+});
 
 // const multerStorage = multer.diskStorage({
 //   destination: (req, file, cb) => {

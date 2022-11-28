@@ -1,5 +1,6 @@
 const express = require('express');
 const jwtBearer = require('express-oauth2-jwt-bearer');
+
 const authController = require('../controllers/authController');
 const userController = require('../controllers/userController');
 
@@ -12,34 +13,37 @@ const checkJwt = jwtBearer.auth({
   issuerBaseURL: process.env.AUTH0_ISSUER_BASE_URL,
 });
 
-// This route doesn't need authentication
-router.get('/api/public', (req, res) => {
-  res.json({
-    message:
-      "Hello from a public endpoint! You don't need to be authenticated to see this.",
-  });
-});
+router.use(userController.extractUserFromAccessToken);
 
-// This route needs authentication
-router.get('/api/private', checkJwt, (req, res) => {
-  res.json({
-    message:
-      'Hello from a private endpoint! You need to be authenticated to see this.',
-  });
-});
+// // This route doesn't need authentication
+// router.get('/api/public', (req, res) => {
+//   res.json({
+//     message:
+//       "Hello from a public endpoint! You don't need to be authenticated to see this.",
+//   });
+// });
 
-const checkScopes = jwtBearer.requiredScopes('read:messages');
+// // This route needs authentication
+// router.get('/api/private', checkJwt, (req, res) => {
+//   res.json({
+//     message:
+//       'Hello from a private endpoint! You need to be authenticated to see this.',
+//   });
+// });
 
-router.get('/api/private-scoped', checkJwt, checkScopes, (req, res) => {
-  res.json({
-    message:
-      'Hello from a private endpoint! You need to be authenticated and have a scope of read:messages to see this.',
-  });
-});
+// const checkScopes = jwtBearer.requiredScopes('read:messages');
+
+// router.get('/api/private-scoped', checkJwt, checkScopes, (req, res) => {
+//   res.json({
+//     message:
+//       'Hello from a private endpoint! You need to be authenticated and have a scope of read:messages to see this.',
+//   });
+// });
 
 // router.use('/users', auth(config));
 
-router.post('/', authController.signup);
+router.post('/', checkJwt, userController.createUser);
+router.get('/', checkJwt, userController.getUser);
 // router.post('/login', authController.login);
 // router.get('/logout', authController.logout);
 

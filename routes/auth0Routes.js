@@ -29,5 +29,6 @@ router.use(auth(authConfig));
 
 router.use('/login', authController.login);
 router.use('/profile', requiresAuth(), authController.profile);
+// router.post('reset-password', authController.)
 
 module.exports = router;
