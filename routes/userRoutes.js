@@ -12,7 +12,10 @@ const checkJwt = jwtBearer.auth({
   issuerBaseURL: process.env.AUTH0_ISSUER_BASE_URL,
 });
 
+router.post('/reset-password', userController.sendResetPasswordEmail);
+
 router.use(userController.extractUserFromAccessToken);
+router.use(checkJwt);
 
 // // This route doesn't need authentication
 // router.get('/api/public', (req, res) => {
@@ -41,18 +44,14 @@ router.use(userController.extractUserFromAccessToken);
 
 // router.use('/users', auth(config));
 
-router.get('/', checkJwt, userController.getUsers);
-router.post('/', checkJwt, userController.createUser);
-router.get('/:id', checkJwt, userController.getUser);
-router.patch('/:id', checkJwt, userController.updateUser);
-router.put('/:id', checkJwt, userController.updateUser);
-router.delete('/:id', checkJwt, userController.deleteUser);
-router.post(
-  '/:id/change-password',
-  checkJwt,
-  userController.sendResetPasswordEmail
-);
-router.post('/:id/change-email', checkJwt, userController.changeEmail);
+router.post('/', userController.createUser);
+router.get('/:id', userController.getUser);
+router.patch('/:id', userController.updateUser);
+router.put('/:id', userController.updateUser);
+router.delete('/:id', userController.deleteUser);
+router.post('/:id/change-password', userController.sendResetPasswordEmail);
+router.post('/:id/change-email', userController.changeEmail);
+router.get('/', userController.getUsers);
 
 // Protect all routes after this middleware
 // router.use(authController.protect);

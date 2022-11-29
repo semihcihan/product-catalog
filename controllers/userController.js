@@ -1,6 +1,6 @@
 const multer = require('multer');
 const sharp = require('sharp');
-const jwt_decode = require('jwt-decode');
+const jwtDecode = require('jwt-decode');
 
 const User = require('../models/userModel');
 const catchAsync = require('../utils/catchAsync');
@@ -10,6 +10,7 @@ const authService = require('./auth.service');
 const APIFeatures = require('../utils/apiFeatures');
 
 const AUTHORIZATION_HEADER = 'authorization';
+const ROLES_KEY = 'custom/roles';
 const BEARER = 'Bearer';
 
 const changeUserStatus = async (auth0Id, userId, newStatus) => {
@@ -22,13 +23,25 @@ const changeUserStatus = async (auth0Id, userId, newStatus) => {
   });
 };
 
+exports.minimumPermissionRequired = (PERMISSION) => (req, res, next) => {
+  if (
+    req.user &&
+    req.user[ROLES_KEY] &&
+    req.user[ROLES_KEY].find((value) => value === PERMISSION)
+  ) {
+    next();
+  } else {
+    res.status(403).send();
+  }
+};
+
 exports.extractUserFromAccessToken = (req, res, next) => {
   if (
     req.headers[AUTHORIZATION_HEADER] &&
     req.headers[AUTHORIZATION_HEADER].indexOf(BEARER) > -1
   ) {
     try {
-      req.user = jwt_decode(req.headers[AUTHORIZATION_HEADER].split(BEARER)[1]);
+      req.user = jwtDecode(req.headers[AUTHORIZATION_HEADER].split(BEARER)[1]);
       console.log('---', req.user);
       next();
     } catch (err) {
@@ -97,7 +110,7 @@ exports.updateUser = catchAsync(async (req, res, next) => {
 });
 
 exports.sendResetPasswordEmail = catchAsync(async (req, res, next) => {
-  //TODO: check duplicate email, if admin ok to send other users, if normal user check if it's their email
+  //TODO: if admin ok to send other users, if normal user check if it's their email or no jwt
   await authService.sendResetPasswordEmail(req.body.email);
   res.status(200).json({
     status: 'success',
