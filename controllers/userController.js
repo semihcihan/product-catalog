@@ -6,10 +6,20 @@ const User = require('../models/userModel');
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
 const factory = require('./handlerFactory');
-const authController = require('./authController');
+const authService = require('./auth.service');
 
 const AUTHORIZATION_HEADER = 'authorization';
 const BEARER = 'Bearer';
+
+const changeUserStatus = async (auth0Id, userId, newStatus) => {
+  await User.findByIdAndUpdate(userId, {
+    status: newStatus,
+  });
+
+  authService.updateAuth0User(auth0Id, {
+    status: newStatus,
+  });
+};
 
 exports.extractUserFromAccessToken = (req, res, next) => {
   if (
@@ -18,6 +28,7 @@ exports.extractUserFromAccessToken = (req, res, next) => {
   ) {
     try {
       req.user = jwt_decode(req.headers[AUTHORIZATION_HEADER].split(BEARER)[1]);
+      console.log('---', req.user);
       next();
     } catch (err) {
       res.status(500).send(err);
@@ -28,7 +39,6 @@ exports.extractUserFromAccessToken = (req, res, next) => {
 };
 
 exports.createUser = catchAsync(async (req, res, next) => {
-  console.log(req.user);
   const newUser = await User.create({
     firstName: req.body.firstName,
     lastName: req.body.lastName,
@@ -43,7 +53,9 @@ exports.createUser = catchAsync(async (req, res, next) => {
     addresses: req.body.addresses,
   });
 
-  authController.updateNewCreatedUser(req.user.sub, { appUserId: newUser._id });
+  await authService.updateAuth0User(req.user.sub, {
+    appUserId: newUser._id,
+  });
 
   res.status(201).json({
     status: 'success',
@@ -51,10 +63,79 @@ exports.createUser = catchAsync(async (req, res, next) => {
   });
 });
 
-exports.getUser = catchAsync(async (req, res, next) => {
-  console.log(req.user);
-  res.status(201).json({
+exports.updateUser = catchAsync(async (req, res, next) => {
+  //TODO: change permission level if admin,  ?? req.user['custom/app_metadata'].appUserId
+  const { id } = req.params;
+  const updatedUser = await User.findByIdAndUpdate(
+    id,
+    {
+      firstName: req.body.firstName,
+      lastName: req.body.lastName,
+      gender: req.body.gender,
+      phone: req.body.phone,
+      username: req.body.username,
+      birthDate: req.body.birthDate,
+      avatar: req.body.avatar,
+      addresses: req.body.addresses,
+    },
+    {
+      new: true,
+      runValidators: true,
+    }
+  );
+
+  //check if admin
+  if (req.body.status) {
+    await changeUserStatus(req.user.sub, id, req.body.status);
+  }
+
+  res.status(200).json({
     status: 'success',
+    data: updatedUser,
+  });
+});
+
+exports.sendResetPasswordEmail = catchAsync(async (req, res, next) => {
+  //TODO: check duplicate email, if admin ok to send other users, if normal user check if it's their email
+  await authService.sendResetPasswordEmail(req.body.email);
+  res.status(200).json({
+    status: 'success',
+  });
+});
+
+exports.changeEmail = catchAsync(async (req, res, next) => {
+  //TODO: make it available only for admins for other users or logged in user
+  const { id } = req.params;
+  await authService.changeEmail(id, req.body.newEmail);
+  res.status(200).json({
+    status: 'success',
+  });
+});
+
+exports.getUser = catchAsync(async (req, res, next) => {
+  //TODO: make it available for current user or admins
+  const { id } = req.params;
+  const query = User.findById(id);
+  const doc = await query;
+  if (!doc) {
+    return next(new AppError('No document found with that ID', 404));
+  }
+
+  res.status(200).json({
+    status: 'success',
+    data: {
+      doc,
+    },
+  });
+});
+
+exports.deleteUser = catchAsync(async (req, res, next) => {
+  //TODO: make it available for current user or admins
+  const { id } = req.params;
+  await changeUserStatus(req.user.sub, id, 'closed');
+  res.status(204).json({
+    status: 'success',
+    data: { id },
   });
 });
 

@@ -1,7 +1,6 @@
 const express = require('express');
 const jwtBearer = require('express-oauth2-jwt-bearer');
 
-const authController = require('../controllers/authController');
 const userController = require('../controllers/userController');
 
 const router = express.Router();
@@ -43,12 +42,16 @@ router.use(userController.extractUserFromAccessToken);
 // router.use('/users', auth(config));
 
 router.post('/', checkJwt, userController.createUser);
-router.get('/', checkJwt, userController.getUser);
-// router.post('/login', authController.login);
-// router.get('/logout', authController.logout);
-
-// router.post('/forgotPassword', authController.forgotPassword);
-// router.patch('/resetPassword/:token', authController.resetPassword);
+router.get('/:id', checkJwt, userController.getUser);
+router.patch('/:id', checkJwt, userController.updateUser);
+router.put('/:id', checkJwt, userController.updateUser);
+router.delete('/:id', checkJwt, userController.deleteUser);
+router.post(
+  '/:id/change-password',
+  checkJwt,
+  userController.sendResetPasswordEmail
+);
+router.post('/:id/change-email', checkJwt, userController.changeEmail);
 
 // Protect all routes after this middleware
 // router.use(authController.protect);
