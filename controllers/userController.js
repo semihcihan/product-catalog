@@ -7,6 +7,7 @@ const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
 const factory = require('./handlerFactory');
 const authService = require('./auth.service');
+const APIFeatures = require('../utils/apiFeatures');
 
 const AUTHORIZATION_HEADER = 'authorization';
 const BEARER = 'Bearer';
@@ -136,6 +137,24 @@ exports.deleteUser = catchAsync(async (req, res, next) => {
   res.status(204).json({
     status: 'success',
     data: { id },
+  });
+});
+
+exports.getUsers = catchAsync(async (req, res, next) => {
+  //TODO: only admin
+  const features = new APIFeatures(User.find(), req.query)
+    .filter()
+    .sort()
+    .limitFields()
+    .paginate();
+  // const doc = await features.query.explain();
+  const doc = await features.query;
+
+  // SEND RESPONSE
+  res.status(200).json({
+    status: 'success',
+    results: doc.length,
+    data: doc,
   });
 });
 

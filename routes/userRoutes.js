@@ -41,6 +41,7 @@ router.use(userController.extractUserFromAccessToken);
 
 // router.use('/users', auth(config));
 
+router.get('/', checkJwt, userController.getUsers);
 router.post('/', checkJwt, userController.createUser);
 router.get('/:id', checkJwt, userController.getUser);
 router.patch('/:id', checkJwt, userController.updateUser);
