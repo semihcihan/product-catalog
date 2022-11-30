@@ -8,9 +8,11 @@ const mongoSanitize = require('express-mongo-sanitize');
 const xss = require('xss-clean');
 // const hpp = require('hpp');
 const cors = require('cors');
+const globalErrorHandler = require('./controllers/errorController');
 
 const usersRouter = require('./routes/userRoutes');
 const auth0Router = require('./routes/auth0Routes');
+const AppError = require('./utils/appError');
 
 const app = express();
 
@@ -51,19 +53,10 @@ app.use(xss());
   })
 ); */
 
-// catch 404 and forward to error handler
-app.use((req, res, next) => {
-  next(createError(404));
+app.all('*', (req, res, next) => {
+  next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
 });
-
 // error handler
-app.use((err, req, res, next) => {
-  // set locals, only providing error in development
-  res.locals.message = err.message;
-  res.locals.error = req.app.get('env') === 'development' ? err : {};
-
-  // render the error page
-  res.status(err.status || 500);
-});
+app.use(globalErrorHandler);
 
 module.exports = app;

@@ -1,6 +1,5 @@
 const multer = require('multer');
 const sharp = require('sharp');
-const jwtDecode = require('jwt-decode');
 
 const User = require('../models/userModel');
 const catchAsync = require('../utils/catchAsync');
@@ -8,10 +7,7 @@ const AppError = require('../utils/appError');
 const factory = require('./handlerFactory');
 const authService = require('./auth.service');
 const APIFeatures = require('../utils/apiFeatures');
-
-const AUTHORIZATION_HEADER = 'authorization';
-const ROLES_KEY = 'custom/roles';
-const BEARER = 'Bearer';
+const auth0Scopes = require('./auth0Scopes');
 
 const changeUserStatus = async (auth0Id, userId, newStatus) => {
   await User.findByIdAndUpdate(userId, {
@@ -23,33 +19,15 @@ const changeUserStatus = async (auth0Id, userId, newStatus) => {
   });
 };
 
-exports.minimumPermissionRequired = (PERMISSION) => (req, res, next) => {
-  if (
-    req.user &&
-    req.user[ROLES_KEY] &&
-    req.user[ROLES_KEY].find((value) => value === PERMISSION)
-  ) {
-    next();
-  } else {
-    res.status(403).send();
-  }
-};
+const TOKEN_APP_META_DATA_KEY = 'custom/app_metadata';
+const TOKEN_ROLES_KEY = 'custom/roles';
 
 exports.extractUserFromAccessToken = (req, res, next) => {
-  if (
-    req.headers[AUTHORIZATION_HEADER] &&
-    req.headers[AUTHORIZATION_HEADER].indexOf(BEARER) > -1
-  ) {
-    try {
-      req.user = jwtDecode(req.headers[AUTHORIZATION_HEADER].split(BEARER)[1]);
-      console.log('---', req.user);
-      next();
-    } catch (err) {
-      res.status(500).send(err);
-    }
-  } else {
-    next();
-  }
+  req.user = req.auth ? req.auth.payload : {};
+  req.user.appId = req.user[TOKEN_APP_META_DATA_KEY].appUserId;
+  req.user.status = req.user[TOKEN_APP_META_DATA_KEY].status;
+  req.user.roles = req.user[TOKEN_ROLES_KEY];
+  next();
 };
 
 exports.createUser = catchAsync(async (req, res, next) => {
@@ -118,10 +96,20 @@ exports.sendResetPasswordEmail = catchAsync(async (req, res, next) => {
 });
 
 exports.changeEmail = catchAsync(async (req, res, next) => {
-  //TODO: make it available only for admins for other users or logged in user
+  //if current user send the request user req.user.sub obj
+  //if other user send the request by getting the auth0 id of the user
   const { id } = req.params;
-  await authService.changeEmail(id, req.body.newEmail);
-  res.status(200).json({
+  if (req.user.appId === id) {
+    // await authService.changeEmail(req.user.sub, req.body.newEmail);
+  } else {
+    const users = await authService.getUserFromAuthWithAppId(id);
+    if (!users || users.length !== 0) {
+      // await authService.changeEmail(users[0].user_id, req.body.newEmail);
+    } else {
+      return next(new AppError('No document found with that ID', 404));
+    }
+  }
+  return res.status(200).json({
     status: 'success',
   });
 });
