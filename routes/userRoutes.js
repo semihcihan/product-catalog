@@ -71,12 +71,15 @@ router.delete(
   checkScope(auth0Scopes.DELETE_USER, auth0Scopes.DELETE_OWN_USER),
   userController.deleteUser
 );
-router.post('/:id/change-password', userController.sendResetPasswordEmail);
 router.post(
   '/:id/change-email',
   checkScope(auth0Scopes.UPDATE_USER_EMAIL, auth0Scopes.UPDATE_OWN_EMAIL),
   userController.changeEmail
 );
-router.get('/', userController.getUsers);
+router.get(
+  '/',
+  checkScope(auth0Scopes.READ_USERS, auth0Scopes.READ_USERS),
+  userController.getUsers
+);
 
 module.exports = router;

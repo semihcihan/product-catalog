@@ -88,7 +88,6 @@ exports.updateUser = catchAsync(async (req, res, next) => {
 });
 
 exports.sendResetPasswordEmail = catchAsync(async (req, res, next) => {
-  //TODO: if admin ok to send other users, if normal user check if it's their email or no jwt
   await authService.sendResetPasswordEmail(req.body.email);
   res.status(200).json({
     status: 'success',
