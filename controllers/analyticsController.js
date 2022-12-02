@@ -1,6 +1,4 @@
 const catchAsync = require('../utils/catchAsync');
-const AppError = require('../utils/appError');
-const authService = require('./auth.service');
 const APIFeatures = require('../utils/apiFeatures');
 const { logRequest } = require('../utils/analytics');
 const AnalyticsLog = require('../models/analyticsLogModel');

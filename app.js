@@ -9,9 +9,9 @@ const xss = require('xss-clean');
 const cors = require('cors');
 const globalErrorHandler = require('./controllers/errorController');
 
-const usersRouter = require('./routes/userRoutes');
-const analyticsRouter = require('./routes/analyticsRoutes');
+const v1Router = require('./routes/v1Routes');
 const auth0Router = require('./routes/auth0Routes');
+
 const AppError = require('./utils/appError');
 
 const app = express();
@@ -37,8 +37,8 @@ app.use(cookieParser());
 app.use(mongoSanitize());
 
 app.use(auth0Router);
+app.use('/api/v1', v1Router);
 
-app.use('/users', usersRouter);
 app.use(xss());
 
 /* app.use(
