@@ -9,12 +9,6 @@ const APIFeatures = require('../utils/apiFeatures');
 const { logRequest } = require('../utils/analytics');
 
 exports.createUser = catchAsync(async (req, res, next) => {
-  //TODO:
-  /*
-    let create other users for admins
-    let only create own user by req.user.sub for normal users
-    check role
-  */
   const auth0Id = req.body.auth0Id ?? req.user.sub;
   const newUser = await User.create({
     firstName: req.body.firstName,

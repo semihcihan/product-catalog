@@ -109,9 +109,14 @@ exports.checkUserRoleWritePermission = (req, res, next) => {
 };
 
 exports.checkUserCreatePermission = (req, res, next) => {
+  if (!req.user) {
+    next(new AppError('insufficient_permission', 401));
+  }
+
   if (
-    !req.user.appId ||
-    permissionsByRole[req.user.role].includes(permissions.CREATE_USER)
+    (!req.user.appId && !req.body.auth0Id) ||
+    (req.user.role &&
+      permissionsByRole[req.user.role].includes(permissions.CREATE_USER))
   ) {
     return next();
   }
@@ -143,7 +148,9 @@ const TOKEN_APP_META_DATA_KEY = 'custom/app_metadata';
 
 exports.extractUserFromAccessToken = catchAsync(async (req, res, next) => {
   req.user = req.auth ? req.auth.payload : {};
-  req.user.appId = req.user[TOKEN_APP_META_DATA_KEY].appUserId;
+  if (req.user[TOKEN_APP_META_DATA_KEY]) {
+    req.user.appId = req.user[TOKEN_APP_META_DATA_KEY].appUserId;
+  }
   if (req.user.appId) {
     const user = await User.findById(req.user.appId);
     if (!user) {
