@@ -1,6 +1,6 @@
 const express = require('express');
 const cookieParser = require('cookie-parser');
-const logger = require('morgan');
+const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
 const helmet = require('helmet');
 const mongoSanitize = require('express-mongo-sanitize');
@@ -22,10 +22,10 @@ app.use(cors());
 app.use(helmet());
 app.options('*', cors());
 if (process.env.NODE_ENV === 'development') {
-  app.use(logger('dev'));
+  app.use(morgan('dev'));
 }
 const limiter = rateLimit({
-  max: 100,
+  max: +process.env.MAX_NUMBER_OF_REQUESTS_PER_HOUR,
   windowMs: 60 * 60 * 1000,
   message: 'Too many requests from this IP, please try again in an hour!',
 });
