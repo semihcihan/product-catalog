@@ -1,3 +1,4 @@
+const { logError } = require('../utils/analytics');
 const AppError = require('../utils/appError');
 
 const handleCastErrorDB = (err) => {
@@ -61,6 +62,8 @@ module.exports = (err, req, res, next) => {
 
   err.statusCode = err.statusCode || 500;
   err.status = err.status || 'error';
+
+  logError(req, err);
 
   if (process.env.NODE_ENV === 'development') {
     sendErrorDev(err, res);

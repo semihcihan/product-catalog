@@ -4,10 +4,9 @@ const sharp = require('sharp');
 const User = require('../models/userModel');
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
-const factory = require('./handlerFactory');
 const authService = require('./auth.service');
 const APIFeatures = require('../utils/apiFeatures');
-const auth0Scopes = require('./auth0Scopes');
+const { logRequest } = require('../utils/analytics');
 
 const changeUserStatus = async (auth0Id, userId, newStatus) => {
   await User.findByIdAndUpdate(userId, {
@@ -17,17 +16,6 @@ const changeUserStatus = async (auth0Id, userId, newStatus) => {
   authService.updateAuth0User(auth0Id, {
     status: newStatus,
   });
-};
-
-const TOKEN_APP_META_DATA_KEY = 'custom/app_metadata';
-const TOKEN_ROLES_KEY = 'custom/roles';
-
-exports.extractUserFromAccessToken = (req, res, next) => {
-  req.user = req.auth ? req.auth.payload : {};
-  req.user.appId = req.user[TOKEN_APP_META_DATA_KEY].appUserId;
-  req.user.status = req.user[TOKEN_APP_META_DATA_KEY].status;
-  req.user.roles = req.user[TOKEN_ROLES_KEY];
-  next();
 };
 
 exports.createUser = catchAsync(async (req, res, next) => {
@@ -48,6 +36,8 @@ exports.createUser = catchAsync(async (req, res, next) => {
   await authService.updateAuth0User(req.user.sub, {
     appUserId: newUser._id,
   });
+
+  logRequest(req, 'user.create');
 
   res.status(201).json({
     status: 'success',
@@ -76,10 +66,12 @@ exports.updateUser = catchAsync(async (req, res, next) => {
     }
   );
 
-  //check if admin
+  //TODO: check if admin
   if (req.body.status) {
     await changeUserStatus(req.user.sub, id, req.body.status);
   }
+
+  logRequest(req, 'user.update');
 
   res.status(200).json({
     status: 'success',
@@ -89,6 +81,7 @@ exports.updateUser = catchAsync(async (req, res, next) => {
 
 exports.sendResetPasswordEmail = catchAsync(async (req, res, next) => {
   await authService.sendResetPasswordEmail(req.body.email);
+  logRequest(req, 'user.reset_password_email');
   res.status(200).json({
     status: 'success',
   });
@@ -99,15 +92,17 @@ exports.changeEmail = catchAsync(async (req, res, next) => {
   //if other user send the request by getting the auth0 id of the user
   const { id } = req.params;
   if (req.user.appId === id) {
-    // await authService.changeEmail(req.user.sub, req.body.newEmail);
+    await authService.changeEmail(req.user.sub, req.body.newEmail);
   } else {
     const users = await authService.getUserFromAuthWithAppId(id);
     if (!users || users.length !== 0) {
-      // await authService.changeEmail(users[0].user_id, req.body.newEmail);
+      await authService.changeEmail(users[0].user_id, req.body.newEmail);
     } else {
       return next(new AppError('No document found with that ID', 404));
     }
   }
+
+  logRequest(req, 'user.change_email');
   return res.status(200).json({
     status: 'success',
   });
@@ -122,6 +117,8 @@ exports.getUser = catchAsync(async (req, res, next) => {
     return next(new AppError('No document found with that ID', 404));
   }
 
+  logRequest(req, 'user.get');
+
   res.status(200).json({
     status: 'success',
     data: {
@@ -134,6 +131,9 @@ exports.deleteUser = catchAsync(async (req, res, next) => {
   //TODO: make it available for current user or admins
   const { id } = req.params;
   await changeUserStatus(req.user.sub, id, 'closed');
+
+  logRequest(req, 'user.delete');
+
   res.status(204).json({
     status: 'success',
     data: { id },
@@ -149,6 +149,8 @@ exports.getUsers = catchAsync(async (req, res, next) => {
     .paginate();
   // const doc = await features.query.explain();
   const doc = await features.query;
+
+  logRequest(req, 'user.find');
 
   // SEND RESPONSE
   res.status(200).json({

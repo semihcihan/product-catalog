@@ -1,6 +1,6 @@
+const jwtBearer = require('express-oauth2-jwt-bearer');
 const { ManagementClient } = require('auth0');
 const axios = require('axios');
-const jwtBearer = require('express-oauth2-jwt-bearer');
 const AppError = require('../utils/appError');
 const auth0Scopes = require('./auth0Scopes');
 
@@ -44,6 +44,7 @@ exports.changeEmail = async (auth0Id, email) => {
 };
 
 exports.sendResetPasswordEmail = async (email) => {
+  //TODO: use management API
   const options = {
     method: 'POST',
     url: `https://${process.env.AUTH0_DOMAIN}/dbconnections/change_password`,
@@ -60,7 +61,6 @@ exports.sendResetPasswordEmail = async (email) => {
 
 exports.checkScope = (adminScope, ownScope) => (req, res, next) => {
   const scopeToCheck = req.user.appId === req.params.id ? ownScope : adminScope;
-  console.log('roles', req.user.roles);
   if (!scopeToCheck) {
     return next();
   }
@@ -74,7 +74,6 @@ exports.checkScope = (adminScope, ownScope) => (req, res, next) => {
   ) {
     return next(new AppError('insufficient_scope', 401));
   }
-  console.log('---oook');
 
   next();
 };
@@ -89,3 +88,19 @@ exports.getUserFromAuthWithAppId = (appId) => {
 
   return management.getUsers(params);
 };
+
+const TOKEN_APP_META_DATA_KEY = 'custom/app_metadata';
+const TOKEN_ROLES_KEY = 'custom/roles';
+
+exports.extractUserFromAccessToken = (req, res, next) => {
+  req.user = req.auth ? req.auth.payload : {};
+  req.user.appId = req.user[TOKEN_APP_META_DATA_KEY].appUserId;
+  req.user.status = req.user[TOKEN_APP_META_DATA_KEY].status;
+  req.user.roles = req.user[TOKEN_ROLES_KEY];
+  next();
+};
+
+exports.checkJwt = jwtBearer.auth({
+  audience: process.env.AUTH0_AUDIENCE,
+  issuerBaseURL: process.env.AUTH0_ISSUER_BASE_URL,
+});

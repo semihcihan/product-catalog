@@ -1,5 +1,4 @@
 const express = require('express');
-const createError = require('http-errors');
 const cookieParser = require('cookie-parser');
 const logger = require('morgan');
 const rateLimit = require('express-rate-limit');
@@ -11,6 +10,7 @@ const cors = require('cors');
 const globalErrorHandler = require('./controllers/errorController');
 
 const usersRouter = require('./routes/userRoutes');
+const analyticsRouter = require('./routes/analyticsRoutes');
 const auth0Router = require('./routes/auth0Routes');
 const AppError = require('./utils/appError');
 
@@ -37,6 +37,7 @@ app.use(cookieParser());
 app.use(mongoSanitize());
 
 app.use(auth0Router);
+
 app.use('/users', usersRouter);
 app.use(xss());
 
@@ -56,6 +57,7 @@ app.use(xss());
 app.all('*', (req, res, next) => {
   next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
 });
+
 // error handler
 app.use(globalErrorHandler);
 
