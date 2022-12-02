@@ -119,7 +119,7 @@ exports.checkUserCreatePermission = (req, res, next) => {
   next(new AppError('insufficient_permission', 401));
 };
 
-exports.getUserFromAuthWithAppId = (appId) => {
+exports.getUserFromAuthWithAppId = async (appId) => {
   const params = {
     search_engine: 'v3',
     q: `app_metadata.appUserId:${appId}`,
@@ -127,7 +127,16 @@ exports.getUserFromAuthWithAppId = (appId) => {
     page: 0,
   };
 
-  return management.getUsers(params);
+  const users = await management.getUsers(params);
+  if (users && users.length !== 0) {
+    return users[0];
+  }
+
+  return undefined;
+};
+
+exports.deleteUser = (auth0Id) => {
+  management.deleteUser({ id: auth0Id });
 };
 
 const TOKEN_APP_META_DATA_KEY = 'custom/app_metadata';
