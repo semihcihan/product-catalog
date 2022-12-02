@@ -5,8 +5,9 @@ const {
   checkJwt,
   checkUserRoleWritePermission,
   checkUserStatusWritePermission,
+  checkUserCreatePermission,
 } = require('../controllers/auth.service');
-const auth0Scopes = require('../controllers/auth0Scopes');
+const permissions = require('../controllers/permissions');
 
 const userController = require('../controllers/userController');
 
@@ -19,10 +20,7 @@ router.use(extractUserFromAccessToken);
 
 router.post(
   '/',
-  checkRequiredPermissions(
-    auth0Scopes.CREATE_USER,
-    auth0Scopes.CREATE_OWN_USER
-  ),
+  checkUserCreatePermission,
   checkUserRoleWritePermission,
   checkUserStatusWritePermission,
   userController.createUser
@@ -31,8 +29,8 @@ router.post(
 router.patch(
   '/:id',
   checkRequiredPermissions(
-    auth0Scopes.UPDATE_USER,
-    auth0Scopes.UPDATE_OWN_USER
+    permissions.UPDATE_USER,
+    permissions.UPDATE_OWN_USER
   ),
   checkUserRoleWritePermission,
   checkUserStatusWritePermission,
@@ -42,8 +40,8 @@ router.patch(
 router.put(
   '/:id',
   checkRequiredPermissions(
-    auth0Scopes.UPDATE_USER,
-    auth0Scopes.UPDATE_OWN_USER
+    permissions.UPDATE_USER,
+    permissions.UPDATE_OWN_USER
   ),
   checkUserRoleWritePermission,
   checkUserStatusWritePermission,
@@ -52,15 +50,15 @@ router.put(
 
 router.get(
   '/:id',
-  checkRequiredPermissions(auth0Scopes.READ_USERS, auth0Scopes.READ_OWN_USER),
+  checkRequiredPermissions(permissions.READ_USERS, permissions.READ_OWN_USER),
   userController.getUser
 );
 
 router.delete(
   '/:id',
   checkRequiredPermissions(
-    auth0Scopes.DELETE_USER,
-    auth0Scopes.DELETE_OWN_USER
+    permissions.DELETE_USER,
+    permissions.DELETE_OWN_USER
   ),
   userController.deleteUser
 );
@@ -68,15 +66,15 @@ router.delete(
 router.post(
   '/:id/change-email',
   checkRequiredPermissions(
-    auth0Scopes.UPDATE_USER_EMAIL,
-    auth0Scopes.UPDATE_OWN_EMAIL
+    permissions.UPDATE_USER_EMAIL,
+    permissions.UPDATE_OWN_EMAIL
   ),
   userController.changeEmail
 );
 
 router.get(
   '/',
-  checkRequiredPermissions(auth0Scopes.READ_USERS, auth0Scopes.READ_USERS),
+  checkRequiredPermissions(permissions.READ_USERS, permissions.READ_USERS),
   userController.getUsers
 );
 

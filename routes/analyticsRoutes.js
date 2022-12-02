@@ -4,7 +4,7 @@ const {
   extractUserFromAccessToken,
   checkJwt,
 } = require('../controllers/auth.service');
-const auth0Scopes = require('../controllers/auth0Scopes');
+const permissions = require('../controllers/permissions');
 
 const analyticsController = require('../controllers/analyticsController');
 
@@ -16,8 +16,8 @@ router.use(extractUserFromAccessToken);
 router.get(
   '/',
   checkRequiredPermissions(
-    auth0Scopes.READ_USER_ACTIVITY,
-    auth0Scopes.READ_USER_ACTIVITY
+    permissions.READ_USER_ACTIVITY,
+    permissions.READ_USER_ACTIVITY
   ),
   analyticsController.getAnalytics
 );

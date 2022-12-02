@@ -2,23 +2,25 @@ const jwtBearer = require('express-oauth2-jwt-bearer');
 const { ManagementClient } = require('auth0');
 const axios = require('axios');
 const AppError = require('../utils/appError');
-const auth0Scopes = require('./auth0Scopes');
+const permissions = require('./permissions');
+const User = require('../models/userModel');
+const catchAsync = require('../utils/catchAsync');
 
-const scopesByRole = {
-  admin: Object.values(auth0Scopes).join(),
+const permissionsByRole = {
+  admin: Object.values(permissions).join(),
   customer: [
-    auth0Scopes.CREATE_OWN_USER,
-    auth0Scopes.DELETE_OWN_USER,
-    auth0Scopes.READ_OWN_USER,
-    auth0Scopes.UPDATE_OWN_EMAIL,
-    auth0Scopes.UPDATE_OWN_USER,
+    permissions.CREATE_OWN_USER,
+    permissions.DELETE_OWN_USER,
+    permissions.READ_OWN_USER,
+    permissions.UPDATE_OWN_EMAIL,
+    permissions.UPDATE_OWN_USER,
   ],
   supplier: [
-    auth0Scopes.CREATE_OWN_USER,
-    auth0Scopes.DELETE_OWN_USER,
-    auth0Scopes.READ_OWN_USER,
-    auth0Scopes.UPDATE_OWN_EMAIL,
-    auth0Scopes.UPDATE_OWN_USER,
+    permissions.CREATE_OWN_USER,
+    permissions.DELETE_OWN_USER,
+    permissions.READ_OWN_USER,
+    permissions.UPDATE_OWN_EMAIL,
+    permissions.UPDATE_OWN_USER,
   ],
 };
 
@@ -35,16 +37,6 @@ exports.updateAuth0UserMetaData = async (auth0Id, appMetadata) =>
     { id: auth0Id },
     { app_metadata: { ...appMetadata } }
   );
-
-exports.updateAuth0UserRole = async (auth0Id, role) => {
-  const roles = await management.getRoles();
-  const auth0Role = roles.find((r) => r.name === role);
-  if (!auth0Role) {
-    throw new AppError('No role found with this name', 404);
-  }
-
-  await management.assignRolestoUser({ id: auth0Id }, { roles: auth0Role.id });
-};
 
 exports.changeEmail = async (auth0Id, email) => {
   await management.updateUser(
@@ -71,20 +63,18 @@ exports.sendResetPasswordEmail = async (email) => {
 
 exports.checkRequiredPermissions =
   (adminPermission, ownUserPermission) => (req, res, next) => {
-    const scopeToCheck =
+    const permissionToCheck =
       req.user.appId === req.params.id ? ownUserPermission : adminPermission;
-    if (!scopeToCheck) {
+    if (!permissionToCheck) {
       return next();
     }
 
-    if (!req.user.roles) {
+    if (!req.user.role) {
       return next(new AppError('no_role', 401));
     }
 
-    if (
-      !req.user.roles.some((role) => scopesByRole[role].includes(scopeToCheck))
-    ) {
-      return next(new AppError('insufficient_scope', 401));
+    if (!permissionsByRole[req.user.role].includes(permissionToCheck)) {
+      return next(new AppError('insufficient_permission', 401));
     }
 
     next();
@@ -95,11 +85,10 @@ exports.checkUserStatusWritePermission = (req, res, next) => {
     return next();
   }
 
-  const scopeToCheck = auth0Scopes.UPDATE_USER_STATUS;
   if (
-    !req.user.roles.some((role) => scopesByRole[role].includes(scopeToCheck))
+    !permissionsByRole[req.user.role].includes(permissions.UPDATE_USER_STATUS)
   ) {
-    return next(new AppError('insufficient_scope', 401));
+    return next(new AppError('insufficient_permission', 401));
   }
 
   next();
@@ -110,14 +99,24 @@ exports.checkUserRoleWritePermission = (req, res, next) => {
     return next();
   }
 
-  const scopeToCheck = auth0Scopes.UPDATE_USER_ROLE;
   if (
-    !req.user.roles.some((role) => scopesByRole[role].includes(scopeToCheck))
+    !permissionsByRole[req.user.role].includes(permissions.UPDATE_USER_ROLE)
   ) {
-    return next(new AppError('insufficient_scope', 401));
+    return next(new AppError('insufficient_permission', 401));
   }
 
   next();
+};
+
+exports.checkUserCreatePermission = (req, res, next) => {
+  if (
+    !req.user.appId ||
+    permissionsByRole[req.user.role].includes(permissions.CREATE_USER)
+  ) {
+    return next();
+  }
+
+  next(new AppError('insufficient_permission', 401));
 };
 
 exports.getUserFromAuthWithAppId = (appId) => {
@@ -132,15 +131,23 @@ exports.getUserFromAuthWithAppId = (appId) => {
 };
 
 const TOKEN_APP_META_DATA_KEY = 'custom/app_metadata';
-const TOKEN_ROLES_KEY = 'custom/roles';
 
-exports.extractUserFromAccessToken = (req, res, next) => {
+exports.extractUserFromAccessToken = catchAsync(async (req, res, next) => {
   req.user = req.auth ? req.auth.payload : {};
   req.user.appId = req.user[TOKEN_APP_META_DATA_KEY].appUserId;
-  req.user.status = req.user[TOKEN_APP_META_DATA_KEY].status;
-  req.user.roles = req.user[TOKEN_ROLES_KEY];
+  if (req.user.appId) {
+    const user = await User.findById(req.user.appId);
+    if (!user) {
+      return next(new AppError('No document found with that ID', 404));
+    }
+    req.user = { ...req.user, ...user.toJSON() };
+
+    if (req.user.status !== 'active') {
+      return next(new AppError('User not found', 404));
+    }
+  }
   next();
-};
+});
 
 exports.checkJwt = jwtBearer.auth({
   audience: process.env.AUTH0_AUDIENCE,

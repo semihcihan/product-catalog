@@ -8,26 +8,6 @@ const authService = require('./auth.service');
 const APIFeatures = require('../utils/apiFeatures');
 const { logRequest } = require('../utils/analytics');
 
-const changeUserStatus = async (auth0Id, userId, newStatus) => {
-  await User.findByIdAndUpdate(userId, {
-    status: newStatus,
-  });
-
-  authService.updateAuth0UserMetaData(auth0Id, {
-    status: newStatus,
-  });
-};
-
-const changeUserRole = async (auth0Id, userId, newRole) => {
-  authService.updateAuth0UserMetaData(auth0Id, {
-    role: newRole,
-  });
-
-  await User.findByIdAndUpdate(userId, {
-    role: newRole,
-  });
-};
-
 exports.createUser = catchAsync(async (req, res, next) => {
   //TODO:
   /*
@@ -43,20 +23,14 @@ exports.createUser = catchAsync(async (req, res, next) => {
     username: req.body.username,
     birthDate: req.body.birthDate,
     avatar: req.body.avatar,
+    status: req.body.status,
+    role: req.body.role,
     addresses: req.body.addresses,
   });
 
   await authService.updateAuth0UserMetaData(req.user.sub, {
     appUserId: newUser._id,
   });
-
-  if (req.body.status) {
-    await changeUserStatus(req.user.sub, newUser._id, req.body.status);
-  }
-
-  if (req.body.role) {
-    await changeUserRole(req.user.sub, newUser._id, req.body.role);
-  }
 
   logRequest(req, 'user.create');
 
@@ -88,16 +62,6 @@ exports.putUser = catchAsync(async (req, res, next) => {
     }
   );
 
-  //TODO: if admin it doesn't have to be req.user.sub
-  if (req.body.status) {
-    await changeUserStatus(req.user.sub, id, req.body.status);
-  }
-
-  //TODO: if admin it doesn't have to be req.user.sub
-  if (req.body.role) {
-    await changeUserRole(req.user.sub, id, req.body.role);
-  }
-
   logRequest(req, 'user.update');
 
   res.status(200).json({
@@ -127,12 +91,6 @@ exports.patchUser = catchAsync(async (req, res, next) => {
       runValidators: true,
     }
   );
-
-  //TODO: check if admin
-  //TODO: check role
-  if (req.body.status) {
-    await changeUserStatus(req.user.sub, id, req.body.status);
-  }
 
   logRequest(req, 'user.update');
 
@@ -172,7 +130,6 @@ exports.changeEmail = catchAsync(async (req, res, next) => {
 });
 
 exports.getUser = catchAsync(async (req, res, next) => {
-  //TODO: make it available for current user or admins
   const { id } = req.params;
   const query = User.findById(id);
   const doc = await query;
@@ -191,9 +148,11 @@ exports.getUser = catchAsync(async (req, res, next) => {
 });
 
 exports.deleteUser = catchAsync(async (req, res, next) => {
-  //TODO: make it available for current user or admins
   const { id } = req.params;
-  await changeUserStatus(req.user.sub, id, 'closed');
+
+  await User.findByIdAndUpdate(id, {
+    status: 'closed',
+  });
 
   logRequest(req, 'user.delete');
 
@@ -204,7 +163,6 @@ exports.deleteUser = catchAsync(async (req, res, next) => {
 });
 
 exports.getUsers = catchAsync(async (req, res, next) => {
-  //TODO: only admin
   const features = new APIFeatures(User.find(), req.query)
     .filter()
     .sort()
