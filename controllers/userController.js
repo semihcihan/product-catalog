@@ -13,12 +13,28 @@ const changeUserStatus = async (auth0Id, userId, newStatus) => {
     status: newStatus,
   });
 
-  authService.updateAuth0User(auth0Id, {
+  authService.updateAuth0UserMetaData(auth0Id, {
     status: newStatus,
   });
 };
 
+const changeUserRole = async (auth0Id, userId, newRole) => {
+  authService.updateAuth0UserMetaData(auth0Id, {
+    role: newRole,
+  });
+
+  await User.findByIdAndUpdate(userId, {
+    role: newRole,
+  });
+};
+
 exports.createUser = catchAsync(async (req, res, next) => {
+  //TODO:
+  /*
+    let create other users for admins
+    let only create own user by req.user.sub for normal users
+    check role
+  */
   const newUser = await User.create({
     firstName: req.body.firstName,
     lastName: req.body.lastName,
@@ -26,16 +42,21 @@ exports.createUser = catchAsync(async (req, res, next) => {
     phone: req.body.phone,
     username: req.body.username,
     birthDate: req.body.birthDate,
-    email: req.body.email,
     avatar: req.body.avatar,
-    role: req.body.role,
-    status: req.body.status,
     addresses: req.body.addresses,
   });
 
-  await authService.updateAuth0User(req.user.sub, {
+  await authService.updateAuth0UserMetaData(req.user.sub, {
     appUserId: newUser._id,
   });
+
+  if (req.body.status) {
+    await changeUserStatus(req.user.sub, newUser._id, req.body.status);
+  }
+
+  if (req.body.role) {
+    await changeUserRole(req.user.sub, newUser._id, req.body.role);
+  }
 
   logRequest(req, 'user.create');
 
@@ -45,8 +66,7 @@ exports.createUser = catchAsync(async (req, res, next) => {
   });
 });
 
-exports.updateUser = catchAsync(async (req, res, next) => {
-  //TODO: change permission level if admin,  ?? req.user['custom/app_metadata'].appUserId
+exports.putUser = catchAsync(async (req, res, next) => {
   const { id } = req.params;
   const updatedUser = await User.findByIdAndUpdate(
     id,
@@ -58,6 +78,48 @@ exports.updateUser = catchAsync(async (req, res, next) => {
       username: req.body.username,
       birthDate: req.body.birthDate,
       avatar: req.body.avatar,
+      role: req.body.role,
+      status: req.body.status,
+      addresses: req.body.addresses,
+    },
+    {
+      new: true,
+      runValidators: true,
+    }
+  );
+
+  //TODO: if admin it doesn't have to be req.user.sub
+  if (req.body.status) {
+    await changeUserStatus(req.user.sub, id, req.body.status);
+  }
+
+  //TODO: if admin it doesn't have to be req.user.sub
+  if (req.body.role) {
+    await changeUserRole(req.user.sub, id, req.body.role);
+  }
+
+  logRequest(req, 'user.update');
+
+  res.status(200).json({
+    status: 'success',
+    data: updatedUser,
+  });
+});
+
+exports.patchUser = catchAsync(async (req, res, next) => {
+  const { id } = req.params;
+  const updatedUser = await User.findByIdAndUpdate(
+    id,
+    {
+      firstName: req.body.firstName,
+      lastName: req.body.lastName,
+      gender: req.body.gender,
+      phone: req.body.phone,
+      username: req.body.username,
+      birthDate: req.body.birthDate,
+      avatar: req.body.avatar,
+      role: req.body.role,
+      status: req.body.status,
       addresses: req.body.addresses,
     },
     {
@@ -67,6 +129,7 @@ exports.updateUser = catchAsync(async (req, res, next) => {
   );
 
   //TODO: check if admin
+  //TODO: check role
   if (req.body.status) {
     await changeUserStatus(req.user.sub, id, req.body.status);
   }

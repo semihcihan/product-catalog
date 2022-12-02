@@ -1,6 +1,6 @@
 const express = require('express');
 const {
-  checkScope,
+  checkRequiredPermissions,
   extractUserFromAccessToken,
   checkJwt,
 } = require('../controllers/auth.service');
@@ -15,7 +15,10 @@ router.use(extractUserFromAccessToken);
 
 router.get(
   '/',
-  checkScope(auth0Scopes.READ_USER_ACTIVITY, auth0Scopes.READ_USER_ACTIVITY),
+  checkRequiredPermissions(
+    auth0Scopes.READ_USER_ACTIVITY,
+    auth0Scopes.READ_USER_ACTIVITY
+  ),
   analyticsController.getAnalytics
 );
 

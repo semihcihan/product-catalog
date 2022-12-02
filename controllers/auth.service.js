@@ -30,11 +30,21 @@ const management = new ManagementClient({
     'read:users update:users create:users create:users_app_metadata delete:users delete:users_app_metadata update:users_app_metadata',
 });
 
-exports.updateAuth0User = async (auth0Id, appMetadata) =>
+exports.updateAuth0UserMetaData = async (auth0Id, appMetadata) =>
   await management.updateUser(
     { id: auth0Id },
     { app_metadata: { ...appMetadata } }
   );
+
+exports.updateAuth0UserRole = async (auth0Id, role) => {
+  const roles = await management.getRoles();
+  const auth0Role = roles.find((r) => r.name === role);
+  if (!auth0Role) {
+    throw new AppError('No role found with this name', 404);
+  }
+
+  await management.assignRolestoUser({ id: auth0Id }, { roles: auth0Role.id });
+};
 
 exports.changeEmail = async (auth0Id, email) => {
   await management.updateUser(
@@ -59,16 +69,48 @@ exports.sendResetPasswordEmail = async (email) => {
   return await axios.post(options.url, options.data);
 };
 
-exports.checkScope = (adminScope, ownScope) => (req, res, next) => {
-  const scopeToCheck = req.user.appId === req.params.id ? ownScope : adminScope;
-  if (!scopeToCheck) {
+exports.checkRequiredPermissions =
+  (adminPermission, ownUserPermission) => (req, res, next) => {
+    const scopeToCheck =
+      req.user.appId === req.params.id ? ownUserPermission : adminPermission;
+    if (!scopeToCheck) {
+      return next();
+    }
+
+    if (!req.user.roles) {
+      return next(new AppError('no_role', 401));
+    }
+
+    if (
+      !req.user.roles.some((role) => scopesByRole[role].includes(scopeToCheck))
+    ) {
+      return next(new AppError('insufficient_scope', 401));
+    }
+
+    next();
+  };
+
+exports.checkUserStatusWritePermission = (req, res, next) => {
+  if (!req.body.status) {
     return next();
   }
 
-  if (!req.user.roles) {
-    return next(new AppError('no_role', 401));
+  const scopeToCheck = auth0Scopes.UPDATE_USER_STATUS;
+  if (
+    !req.user.roles.some((role) => scopesByRole[role].includes(scopeToCheck))
+  ) {
+    return next(new AppError('insufficient_scope', 401));
   }
 
+  next();
+};
+
+exports.checkUserRoleWritePermission = (req, res, next) => {
+  if (!req.body.role) {
+    return next();
+  }
+
+  const scopeToCheck = auth0Scopes.UPDATE_USER_ROLE;
   if (
     !req.user.roles.some((role) => scopesByRole[role].includes(scopeToCheck))
   ) {

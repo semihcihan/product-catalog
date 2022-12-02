@@ -9,5 +9,7 @@ module.exports = Object.freeze({
   UPDATE_OWN_EMAIL: 'update:own_email',
   UPDATE_OWN_USER: 'update:own_user',
   UPDATE_USER_EMAIL: 'update:user_email',
-  UPDATE_USERS: 'update:users',
+  UPDATE_USER: 'update:user',
+  UPDATE_USER_ROLE: 'update:user.role',
+  UPDATE_USER_STATUS: 'update:user.status',
 });
