@@ -19,8 +19,6 @@ const analyticsLogSchema = new mongoose.Schema(
   }
 );
 
-//TODO: check if trying to save password
-
 const AnalyticsLog = mongoose.model('AnalyticsLog', analyticsLogSchema);
 
 module.exports = AnalyticsLog;

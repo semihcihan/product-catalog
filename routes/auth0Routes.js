@@ -27,7 +27,11 @@ const authConfig = {
 
 router.use(auth(authConfig));
 
-router.post('/reset-password', authController.sendResetPasswordEmail);
+router.post(
+  '/reset-password',
+  authController.validateResetPasswordEmail,
+  authController.sendResetPasswordEmail
+);
 
 router.use('/login', authController.login);
 router.use('/profile', requiresAuth(), authController.profile);

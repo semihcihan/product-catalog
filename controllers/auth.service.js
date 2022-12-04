@@ -1,6 +1,5 @@
 const jwtBearer = require('express-oauth2-jwt-bearer');
-const { ManagementClient } = require('auth0');
-const axios = require('axios');
+const { ManagementClient, AuthenticationClient } = require('auth0');
 const AppError = require('../utils/appError');
 const permissions = require('./permissions');
 const User = require('../models/userModel');
@@ -32,6 +31,12 @@ const management = new ManagementClient({
     'read:users update:users create:users create:users_app_metadata delete:users delete:users_app_metadata update:users_app_metadata',
 });
 
+const authClient = new AuthenticationClient({
+  domain: process.env.AUTH0_DOMAIN,
+  clientId: process.env.AUTH0_CLIENT_ID,
+  clientSecret: process.env.AUTH0_CLIENT_SECRET,
+});
+
 exports.updateAuth0UserMetaData = async (auth0Id, appMetadata) =>
   await management.updateUser(
     { id: auth0Id },
@@ -45,21 +50,12 @@ exports.changeEmail = async (auth0Id, email) => {
   );
 };
 
-exports.sendResetPasswordEmail = async (email) => {
-  //TODO: use management API
-  const options = {
-    method: 'POST',
-    url: `https://${process.env.AUTH0_DOMAIN}/dbconnections/change_password`,
-    headers: { 'content-type': 'application/json' },
-    data: {
-      client_id: process.env.AUTH0_CLIENT_ID,
-      email: email,
-      connection: 'Username-Password-Authentication',
-    },
-  };
-
-  return await axios.post(options.url, options.data);
-};
+exports.sendResetPasswordEmail = (email) =>
+  authClient.requestChangePasswordEmail({
+    client_id: process.env.AUTH0_CLIENT_ID,
+    email: email,
+    connection: 'Username-Password-Authentication',
+  });
 
 exports.checkRequiredPermissions =
   (adminPermission, ownUserPermission) => (req, res, next) => {
@@ -110,7 +106,7 @@ exports.checkUserRoleWritePermission = (req, res, next) => {
 
 exports.checkUserCreatePermission = (req, res, next) => {
   if (!req.user) {
-    next(new AppError('insufficient_permission', 401));
+    return next(new AppError('insufficient_permission', 401));
   }
 
   if (
@@ -121,7 +117,7 @@ exports.checkUserCreatePermission = (req, res, next) => {
     return next();
   }
 
-  next(new AppError('insufficient_permission', 401));
+  return next(new AppError('insufficient_permission', 401));
 };
 
 exports.getUserFromAuthWithAppId = async (appId) => {
