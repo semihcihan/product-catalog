@@ -118,19 +118,11 @@ exports.patchUser = catchAsync(async (req, res, next) => {
     }
   );
 
-  logRequest(req, 'user.update');
+  logRequest(req, 'user.patch');
 
   res.status(200).json({
     status: 'success',
     data: updatedUser,
-  });
-});
-
-exports.sendResetPasswordEmail = catchAsync(async (req, res, next) => {
-  await authService.sendResetPasswordEmail(req.body.email);
-  logRequest(req, 'user.reset_password_email');
-  res.status(200).json({
-    status: 'success',
   });
 });
 
@@ -167,9 +159,7 @@ exports.getUser = catchAsync(async (req, res, next) => {
 
   res.status(200).json({
     status: 'success',
-    data: {
-      doc,
-    },
+    data: doc,
   });
 });
 

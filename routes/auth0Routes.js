@@ -27,8 +27,9 @@ const authConfig = {
 
 router.use(auth(authConfig));
 
+router.post('/reset-password', authController.sendResetPasswordEmail);
+
 router.use('/login', authController.login);
 router.use('/profile', requiresAuth(), authController.profile);
-// router.post('reset-password', authController.)
 
 module.exports = router;
