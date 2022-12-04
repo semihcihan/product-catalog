@@ -26,27 +26,20 @@ router.post(
   userController.createUser
 );
 
-router.patch(
-  '/:id',
-  checkRequiredPermissions(
-    permissions.UPDATE_USER,
-    permissions.UPDATE_OWN_USER
-  ),
-  checkUserRoleWritePermission,
-  checkUserStatusWritePermission,
-  userController.patchUser
-);
-
-router.put(
-  '/:id',
-  checkRequiredPermissions(
-    permissions.UPDATE_USER,
-    permissions.UPDATE_OWN_USER
-  ),
-  checkUserRoleWritePermission,
-  checkUserStatusWritePermission,
-  userController.putUser
-);
+router
+  .route('/:id')
+  .all(
+    checkRequiredPermissions(
+      permissions.UPDATE_USER,
+      permissions.UPDATE_OWN_USER
+    ),
+    checkUserRoleWritePermission,
+    checkUserStatusWritePermission,
+    userController.uploadUserPhoto,
+    userController.resizeUserPhoto
+  )
+  .patch(userController.patchUser)
+  .put(userController.putUser);
 
 router.get(
   '/:id',

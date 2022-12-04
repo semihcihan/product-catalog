@@ -1,3 +1,4 @@
+const path = require('path');
 const express = require('express');
 const cookieParser = require('cookie-parser');
 const morgan = require('morgan');
@@ -21,6 +22,8 @@ app.enable('trust proxy');
 app.use(cors());
 app.use(helmet());
 app.options('*', cors());
+app.use(express.static(path.join(__dirname, 'public')));
+
 if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
 }
