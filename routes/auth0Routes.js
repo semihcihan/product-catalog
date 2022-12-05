@@ -8,7 +8,7 @@ const authConfig = {
   authRequired: false,
   auth0Logout: true,
   secret: process.env.OPENID_SECRET,
-  baseURL: process.env.AUTH0_BASE_URL,
+  baseURL: `${process.env.AUTH0_BASE_URL}/api/v${process.env.API_VERSION_NUMBER}/`,
   clientID: process.env.AUTH0_CLIENT_ID,
   issuerBaseURL: process.env.AUTH0_ISSUER_BASE_URL,
   clientSecret: process.env.AUTH0_CLIENT_SECRET,
@@ -18,10 +18,8 @@ const authConfig = {
     scope: process.env.AUTH0_SCOPE,
   },
   routes: {
-    // Override the default login route to use your own login route as shown below
     login: false,
-    // Pass a custom path to redirect users to a different
-    // path after logout.
+    postLogoutRedirect: '/login',
   },
 };
 

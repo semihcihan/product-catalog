@@ -11,7 +11,6 @@ const cors = require('cors');
 const globalErrorHandler = require('./controllers/errorController');
 
 const v1Router = require('./routes/v1Routes');
-const auth0Router = require('./routes/auth0Routes');
 
 const AppError = require('./utils/appError');
 
@@ -59,8 +58,7 @@ app.use(
   })
 );
 
-app.use(auth0Router);
-app.use('/api/v1', v1Router);
+app.use(`/api/v${process.env.API_VERSION_NUMBER}`, v1Router);
 
 app.all('*', (req, res, next) => {
   next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));

@@ -6,7 +6,9 @@ const catchAsync = require('../utils/catchAsync');
 const { sendResetPasswordEmail } = require('./auth.service');
 
 exports.login = (req, res, next) => {
-  res.oidc.login({ returnTo: '/profile' });
+  const returnTo = req.baseUrl.replace('login', 'profile');
+
+  res.oidc.login({ returnTo });
   logRequest(req, 'user.login');
 };
 
