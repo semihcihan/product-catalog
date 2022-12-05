@@ -1,25 +1,38 @@
 const mongoose = require('mongoose');
+const validator = require('validator');
 
 const userSchema = new mongoose.Schema(
   {
     firstName: {
       type: String,
+      trim: true,
       required: [true, 'Please tell us your first name!'],
     },
     lastName: {
       type: String,
+      trim: true,
       required: [true, 'Please tell us your last name!'],
     },
     gender: {
       type: String,
+      trim: true,
     },
     phone: {
       type: String,
+      validate: {
+        validator: function (v) {
+          return validator.isMobilePhone(v);
+        },
+        message: (props) => `${props.value} is not a valid phone number!`,
+      },
     },
     username: {
       type: String,
       unique: true,
+      trim: true,
       required: [true, 'Please select a username!'],
+      minLength: [3, 'Too short for a username'],
+      maxLength: [30, 'Too long for a username'],
     },
     birthDate: {
       type: Date,
@@ -41,10 +54,11 @@ const userSchema = new mongoose.Schema(
     },
     addresses: [
       {
-        address: String,
+        country: String,
         city: String,
-        postalCode: String,
         state: String,
+        address: String,
+        postalCode: String,
         primary: Boolean,
         label: String,
       },
