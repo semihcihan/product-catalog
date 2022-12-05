@@ -6,7 +6,7 @@ const rateLimit = require('express-rate-limit');
 const helmet = require('helmet');
 const mongoSanitize = require('express-mongo-sanitize');
 const xss = require('xss-clean');
-// const hpp = require('hpp');
+const hpp = require('hpp');
 const cors = require('cors');
 const globalErrorHandler = require('./controllers/errorController');
 
@@ -39,24 +39,28 @@ app.use(cookieParser());
 
 app.use(mongoSanitize());
 
-app.use(auth0Router);
-app.use('/api/v1', v1Router);
-
 app.use(xss());
 
-//TODO:
-/* app.use(
+app.use(
   hpp({
     whitelist: [
-      'duration',
-      'ratingsQuantity',
-      'ratingsAverage',
-      'maxGroupSize',
-      'difficulty',
-      'price',
+      'firstName',
+      'lastName',
+      'gender',
+      'phone',
+      'username',
+      'birthDate',
+      'avatar',
+      'role',
+      'status',
+      'action',
+      'requestUser',
     ],
   })
-); */
+);
+
+app.use(auth0Router);
+app.use('/api/v1', v1Router);
 
 app.all('*', (req, res, next) => {
   next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
