@@ -37,6 +37,19 @@ const authClient = new AuthenticationClient({
   clientSecret: process.env.AUTH0_CLIENT_SECRET,
 });
 
+exports.createAuth0User = async (email, password, appMetadata) => {
+  await management.createUser({
+    connection: 'Username-Password-Authentication',
+    email,
+    password,
+    email_verified: false,
+    verify_email: false,
+    app_metadata: {
+      ...appMetadata,
+    },
+  });
+};
+
 exports.updateAuth0UserMetaData = async (auth0Id, appMetadata) =>
   await management.updateUser(
     { id: auth0Id },
@@ -109,10 +122,15 @@ exports.checkUserCreatePermission = (req, res, next) => {
     return next(new AppError('insufficient_permission', 401));
   }
 
+  if (!req.user.appId && !req.body.email && !req.body.password) {
+    return next();
+  }
+
   if (
-    (!req.user.appId && !req.body.auth0Id) ||
-    (req.user.role &&
-      permissionsByRole[req.user.role].includes(permissions.CREATE_USER))
+    req.user.role &&
+    permissionsByRole[req.user.role].includes(permissions.CREATE_USER) &&
+    req.body.email &&
+    req.body.password
   ) {
     return next();
   }

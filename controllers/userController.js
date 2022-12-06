@@ -9,7 +9,6 @@ const APIFeatures = require('../utils/apiFeatures');
 const { logRequest } = require('../utils/analytics');
 
 exports.createUser = catchAsync(async (req, res, next) => {
-  const auth0Id = req.body.auth0Id ?? req.user.sub;
   const newUser = await User.create({
     firstName: req.body.firstName,
     lastName: req.body.lastName,
@@ -23,9 +22,20 @@ exports.createUser = catchAsync(async (req, res, next) => {
     addresses: req.body.addresses,
   });
 
-  await authService.updateAuth0UserMetaData(auth0Id, {
-    appUserId: newUser._id,
-  });
+  if (req.body.email && req.body.password) {
+    try {
+      await authService.createAuth0User(req.body.email, req.body.password, {
+        appUserId: newUser._id,
+      });
+    } catch (e) {
+      await newUser.delete();
+      return next(e);
+    }
+  } else {
+    await authService.updateAuth0UserMetaData(req.user.sub, {
+      appUserId: newUser._id,
+    });
+  }
 
   logRequest(req, 'user.create');
 
