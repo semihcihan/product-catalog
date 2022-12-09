@@ -10,6 +10,7 @@ import {
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
+import { UpdateVariantDto } from './dto/update-variant.dto';
 
 @Controller('products')
 export class ProductsController {
@@ -41,5 +42,36 @@ export class ProductsController {
   @Delete(':id')
   async remove(@Param('id') id: string) {
     return await this.productsService.remove(id);
+  }
+
+  @Get(':id/variants/:variantId')
+  async getVariant(
+    @Param('id') id: string,
+    @Param('variantId') variantId: string,
+  ) {
+    console.log(id, variantId);
+    return 200;
+  }
+
+  @Patch(':id/variants/:variantId')
+  async updateVariant(
+    @Param('id') id: string,
+    @Param('variantId') variantId: string,
+    @Body() updateVariantDto: UpdateVariantDto,
+  ) {
+    return await this.productsService.updateVariant(
+      id,
+      variantId,
+      updateVariantDto,
+    );
+  }
+
+  @Delete(':id/variants/:variantId')
+  async deleteVariant(
+    @Param('id') id: string,
+    @Param('variantId') variantId: string,
+  ) {
+    console.log(id, variantId);
+    return 200;
   }
 }

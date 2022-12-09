@@ -1,9 +1,11 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Type } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
+import { UpdateVariantDto } from './dto/update-variant.dto';
 import { Product, ProductDocument } from './entities/product.schema';
+import { VariantDocument } from './entities/variant.schema';
 
 @Injectable()
 export class ProductsService {
@@ -35,5 +37,24 @@ export class ProductsService {
 
   remove(id: string) {
     return this.productModel.findByIdAndDelete(id).exec();
+  }
+
+  async updateVariant(
+    id: string,
+    variantId: string,
+    updateVariantDto: UpdateVariantDto,
+  ) {
+    const product: ProductDocument = await this.productModel
+      .findById(id)
+      .exec();
+    const variant = (
+      product.variants as Types.DocumentArray<VariantDocument>
+    ).id(variantId);
+    if (!variant) {
+      throw new Error('404');
+    }
+    variant.set(updateVariantDto);
+    await variant.save();
+    return product;
   }
 }
