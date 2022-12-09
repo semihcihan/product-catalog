@@ -1,12 +1,13 @@
 import { Prop, raw, Schema, SchemaFactory } from '@nestjs/mongoose';
 import mongoose, { HydratedDocument } from 'mongoose';
 import { Category } from 'src/categories/entities/category.schema';
+import { Variant, VariantSchema } from './variant.schema';
 
 export type ProductDocument = HydratedDocument<Product>;
 
 @Schema({ timestamps: true })
 export class Product {
-  @Prop()
+  @Prop({ required: true, minlength: 1 })
   title: string;
 
   @Prop()
@@ -29,31 +30,12 @@ export class Product {
 
   @Prop({ type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Category' }] })
   categories: Category[];
+
+  @Prop({
+    type: [VariantSchema],
+    validate: (v: any) => Array.isArray(v) && v.length > 0,
+  })
+  variants: Variant[];
 }
 
 export const ProductSchema = SchemaFactory.createForClass(Product);
-
-/* 
-category
-    title
-    description
-    html
-
-product
-    title
-    productType
-    tags
-    html
-    images
-    variants
-    categories
-    
-variant (embedded to product)
-    title
-    barcode
-    quantity
-    position
-    price
-    product_id
-    sku
-*/

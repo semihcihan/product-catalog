@@ -10,24 +10,34 @@ export class CategoriesService {
   constructor(
     @InjectModel(Category.name) private categoryModel: Model<CategoryDocument>,
   ) {}
-  async create(createCategoryDto: CreateCategoryDto) {
+  async create(
+    createCategoryDto: CreateCategoryDto,
+  ): Promise<CategoryDocument> {
     const object = new this.categoryModel(createCategoryDto);
-    return object.save();
+    return await object.save();
   }
 
-  findAll() {
-    return `This action returns all categories`;
+  findAll(): Promise<CategoryDocument[]> {
+    return this.categoryModel.find().exec();
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} category`;
+  findOne(id: string): Promise<CategoryDocument> {
+    return this.categoryModel.findById(id).exec();
   }
 
-  update(id: number, updateCategoryDto: UpdateCategoryDto) {
-    return `This action updates a #${id} category`;
+  update(
+    id: string,
+    updateCategoryDto: UpdateCategoryDto,
+  ): Promise<CategoryDocument> {
+    return this.categoryModel
+      .findByIdAndUpdate(id, updateCategoryDto, {
+        new: true,
+        runValidators: true,
+      })
+      .exec();
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} category`;
+  remove(id: string): Promise<CategoryDocument> {
+    return this.categoryModel.findByIdAndDelete(id).exec();
   }
 }

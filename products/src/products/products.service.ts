@@ -11,23 +11,29 @@ export class ProductsService {
     @InjectModel(Product.name) private productModel: Model<ProductDocument>,
   ) {}
 
-  create(createProductDto: CreateProductDto) {
-    return 'This action adds a new product';
+  async create(createProductDto: CreateProductDto): Promise<ProductDocument> {
+    const object = new this.productModel(createProductDto);
+    return await object.save();
   }
 
-  findAll() {
-    return `This action returns all products`;
+  findAll(): Promise<ProductDocument[]> {
+    return this.productModel.find().exec();
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} product`;
+  findOne(id: string) {
+    return this.productModel.findById(id).exec();
   }
 
-  update(id: number, updateProductDto: UpdateProductDto) {
-    return `This action updates a #${id} product`;
+  update(id: string, updateProductDto: UpdateProductDto) {
+    return this.productModel
+      .findByIdAndUpdate(id, updateProductDto, {
+        new: true,
+        runValidators: true,
+      })
+      .exec();
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} product`;
+  remove(id: string) {
+    return this.productModel.findByIdAndDelete(id).exec();
   }
 }

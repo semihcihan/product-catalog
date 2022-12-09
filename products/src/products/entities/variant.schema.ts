@@ -5,7 +5,7 @@ export type VariantDocument = HydratedDocument<Variant>;
 
 @Schema({ timestamps: true })
 export class Variant {
-  @Prop()
+  @Prop({ required: true })
   title: string;
 
   @Prop()
@@ -14,14 +14,15 @@ export class Variant {
   @Prop()
   quantity: number;
 
-  @Prop(
-    raw([
+  @Prop({
+    type: raw([
       {
         price: { type: Number },
         currency: { type: String },
       },
     ]),
-  )
+    validate: (v: any) => Array.isArray(v) && v.length > 0,
+  })
   prices: Record<string, any>[];
 
   @Prop()
