@@ -6,19 +6,29 @@ import {
   Patch,
   Param,
   Delete,
+  UploadedFiles,
+  UseInterceptors,
 } from '@nestjs/common';
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { UpdateVariantDto } from './dto/update-variant.dto';
+import { CreateVariantDto } from './dto/create-variant.dto';
+import { FilesInterceptor } from '@nestjs/platform-express';
+import { SharpPipe } from 'src/pipes/sharp.pipe';
 
 @Controller('products')
 export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
 
   @Post()
-  async create(@Body() createProductDto: CreateProductDto) {
-    return await this.productsService.create(createProductDto);
+  @UseInterceptors(FilesInterceptor('images'))
+  async create(
+    @Body() createProductDto: CreateProductDto,
+    @UploadedFiles(SharpPipe)
+    images: Array<string>,
+  ) {
+    return await this.productsService.create(createProductDto, images);
   }
 
   @Get()
@@ -44,15 +54,6 @@ export class ProductsController {
     return await this.productsService.remove(id);
   }
 
-  @Get(':id/variants/:variantId')
-  async getVariant(
-    @Param('id') id: string,
-    @Param('variantId') variantId: string,
-  ) {
-    console.log(id, variantId);
-    return 200;
-  }
-
   @Patch(':id/variants/:variantId')
   async updateVariant(
     @Param('id') id: string,
@@ -71,7 +72,14 @@ export class ProductsController {
     @Param('id') id: string,
     @Param('variantId') variantId: string,
   ) {
-    console.log(id, variantId);
-    return 200;
+    return await this.productsService.deleteVariant(id, variantId);
+  }
+
+  @Patch(':id/variants/')
+  async updateVariants(
+    @Param('id') id: string,
+    @Body() variants: CreateVariantDto[],
+  ) {
+    return await this.productsService.updateVariants(id, variants);
   }
 }

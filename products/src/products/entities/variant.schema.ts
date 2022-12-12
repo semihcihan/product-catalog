@@ -11,13 +11,13 @@ export class Variant {
   @Prop()
   barcode: string;
 
-  @Prop()
+  @Prop({ min: 0 })
   quantity: number;
 
   @Prop({
     type: raw([
       {
-        price: { type: Number },
+        price: { type: Number, min: 0 },
         currency: { type: String },
       },
     ]),
@@ -25,7 +25,7 @@ export class Variant {
   })
   prices: Record<string, any>[];
 
-  @Prop()
+  @Prop({ min: 0 })
   position: number;
 
   @Prop()
