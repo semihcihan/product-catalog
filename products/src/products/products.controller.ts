@@ -8,13 +8,16 @@ import {
   Delete,
   UploadedFiles,
   UseInterceptors,
+  HttpCode,
+  HttpStatus,
+  UploadedFile,
 } from '@nestjs/common';
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { UpdateVariantDto } from './dto/update-variant.dto';
 import { CreateVariantDto } from './dto/create-variant.dto';
-import { FilesInterceptor } from '@nestjs/platform-express';
+import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { SharpPipe } from 'src/pipes/sharp.pipe';
 
 @Controller('products')
@@ -42,17 +45,23 @@ export class ProductsController {
   }
 
   @Patch(':id')
+  @UseInterceptors(FilesInterceptor('images'))
   async update(
     @Param('id') id: string,
     @Body() updateProductDto: UpdateProductDto,
+    @UploadedFiles(SharpPipe)
+    images: Array<string>,
   ) {
-    return await this.productsService.update(id, updateProductDto);
+    return await this.productsService.update(id, updateProductDto, images);
   }
 
   @Delete(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
   async remove(@Param('id') id: string) {
     return await this.productsService.remove(id);
   }
+
+  //variants
 
   @Patch(':id/variants/:variantId')
   async updateVariant(
@@ -68,6 +77,7 @@ export class ProductsController {
   }
 
   @Delete(':id/variants/:variantId')
+  @HttpCode(HttpStatus.NO_CONTENT)
   async deleteVariant(
     @Param('id') id: string,
     @Param('variantId') variantId: string,
@@ -81,5 +91,37 @@ export class ProductsController {
     @Body() variants: CreateVariantDto[],
   ) {
     return await this.productsService.updateVariants(id, variants);
+  }
+
+  //images
+
+  @Patch(':id/images/:imageId')
+  @UseInterceptors(FileInterceptor('image'))
+  async updateImage(
+    @Param('id') id: string,
+    @Param('imageId') imageId: string,
+    @UploadedFile(SharpPipe)
+    image: string,
+  ) {
+    return await this.productsService.updateImage(id, imageId, image);
+  }
+
+  @Delete(':id/images/:imageId')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async deleteImage(
+    @Param('id') id: string,
+    @Param('imageId') imageId: string,
+  ) {
+    return await this.productsService.deleteImage(id, imageId);
+  }
+
+  @Patch(':id/images/')
+  @UseInterceptors(FilesInterceptor('images'))
+  async updateImages(
+    @Param('id') id: string,
+    @UploadedFiles(SharpPipe)
+    images: Array<string>,
+  ) {
+    return await this.productsService.updateImages(id, images);
   }
 }

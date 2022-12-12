@@ -1,4 +1,4 @@
-import { HttpStatus, Injectable, Type } from '@nestjs/common';
+import { HttpStatus, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { AppException } from 'src/exceptions/exception';
@@ -36,17 +36,34 @@ export class ProductsService {
     return this.productModel.findById(id).exec();
   }
 
-  update(id: string, updateProductDto: UpdateProductDto) {
-    return this.productModel
-      .findByIdAndUpdate(id, updateProductDto, {
-        new: true,
-        runValidators: true,
-      })
-      .exec();
+  async update(
+    id: string,
+    updateProductDto: UpdateProductDto,
+    images: Array<string>,
+  ) {
+    const imgs = images.map((i) => {
+      return {
+        url: i,
+      };
+    });
+
+    const updateProductDtoWithImages: Partial<Product> = {
+      ...updateProductDto,
+    };
+    if (imgs && imgs.length > 0) {
+      updateProductDtoWithImages.images = imgs;
+    }
+    const product = await this.productModel.findByIdAndUpdate(
+      id,
+      updateProductDtoWithImages,
+      { new: true },
+    );
+    return product;
   }
 
-  remove(id: string) {
-    return this.productModel.findByIdAndDelete(id).exec();
+  async remove(id: string) {
+    await this.productModel.findByIdAndDelete(id).exec();
+    return {};
   }
 
   async updateVariant(
@@ -54,9 +71,7 @@ export class ProductsService {
     variantId: string,
     updateVariantDto: UpdateVariantDto,
   ) {
-    const product: ProductDocument = await this.productModel
-      .findById(id)
-      .exec();
+    const product: ProductDocument = await this.productModel.findById(id);
     const variant = (
       product.variants as Types.DocumentArray<VariantDocument>
     ).id(variantId);
@@ -72,9 +87,7 @@ export class ProductsService {
   }
 
   async deleteVariant(id: string, variantId: string) {
-    const product: ProductDocument = await this.productModel
-      .findById(id)
-      .exec();
+    const product: ProductDocument = await this.productModel.findById(id);
     const variant = (
       product.variants as Types.DocumentArray<VariantDocument>
     ).id(variantId);
@@ -85,14 +98,62 @@ export class ProductsService {
       );
     }
     await variant.remove();
+    await product.save();
     return {};
   }
 
   async updateVariants(id: string, createVariantDtos: CreateVariantDto[]) {
-    const product: ProductDocument = await this.productModel
-      .findById(id)
-      .exec();
+    const product: ProductDocument = await this.productModel.findById(id);
     product.variants = createVariantDtos;
+    await product.save();
+    return product;
+  }
+
+  async updateImage(id: string, imageId: string, image: string) {
+    const product: ProductDocument = await this.productModel.findById(id);
+    const imageToUpdate = (
+      product.images as Types.DocumentArray<Record<string, string>>
+    ).id(imageId);
+
+    if (!image || image.length === 0) {
+      throw new AppException('Invalid argument', HttpStatus.BAD_REQUEST);
+    }
+
+    if (!imageToUpdate) {
+      throw new AppException(
+        'No document found with that ID',
+        HttpStatus.NOT_FOUND,
+      );
+    }
+    imageToUpdate.set({ url: image });
+    await product.save();
+    return product;
+  }
+
+  async deleteImage(id: string, imageId: string) {
+    const product: ProductDocument = await this.productModel.findById(id);
+    const imageToDelete = (
+      product.images as Types.DocumentArray<Record<string, string>>
+    ).id(imageId);
+    if (!imageToDelete) {
+      throw new AppException(
+        'No document found with that ID',
+        HttpStatus.NOT_FOUND,
+      );
+    }
+    await imageToDelete.remove();
+    await product.save();
+    return {};
+  }
+
+  async updateImages(id: string, images: string[]) {
+    const product: ProductDocument = await this.productModel.findById(id);
+
+    product.images = images.map((i) => {
+      return {
+        url: i,
+      };
+    });
     await product.save();
     return product;
   }

@@ -5,19 +5,28 @@ import { AppException } from 'src/exceptions/exception';
 
 @Injectable()
 export class SharpPipe
-  implements PipeTransform<Array<Express.Multer.File>, Promise<Array<string>>>
+  implements
+    PipeTransform<
+      Array<Express.Multer.File> | Express.Multer.File,
+      Promise<Array<string> | string>
+    >
 {
-  async transform(images: Array<Express.Multer.File>): Promise<Array<string>> {
-    if (images.some((i) => i.size > 10 * 1024 * 1024)) {
+  async transform(
+    images: Array<Express.Multer.File> | Express.Multer.File,
+  ): Promise<Array<string> | string> {
+    if (!images) {
+      return [];
+    }
+    const imagesToProcess = Array.isArray(images) ? images : [images];
+    if (imagesToProcess.some((i) => i.size > 10 * 1024 * 1024)) {
       throw new AppException('File is too big', HttpStatus.BAD_REQUEST);
     }
 
-    return await Promise.all(
-      images.map(async (image) => {
+    const filenames = await Promise.all(
+      imagesToProcess.map(async (image) => {
         const originalName = path
           .parse(image.originalname)
           .name.replace(/ /g, '-');
-        console.log(originalName);
         const filename = Date.now() + '-' + originalName + '.jpeg';
 
         await sharp(image.buffer)
@@ -29,5 +38,7 @@ export class SharpPipe
         return filename;
       }),
     );
+
+    return Array.isArray(images) ? filenames : filenames[0];
   }
 }
