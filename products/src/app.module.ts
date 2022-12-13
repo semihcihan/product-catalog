@@ -5,11 +5,6 @@ import { ConfigModule } from '@nestjs/config';
 import { ProductsModule } from './products/products.module';
 import { MongooseModule } from '@nestjs/mongoose';
 import { CategoriesModule } from './categories/categories.module';
-import { MulterModule } from '@nestjs/platform-express';
-
-MulterModule.register({
-  dest: './upload',
-});
 
 ConfigModule.forRoot({
   isGlobal: true,
