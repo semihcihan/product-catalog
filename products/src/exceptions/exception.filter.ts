@@ -5,6 +5,7 @@ import {
   HttpException,
   HttpStatus,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { HttpAdapterHost } from '@nestjs/core';
 import { AppException } from './exception';
 
@@ -34,7 +35,10 @@ const handleValidationErrorDB = (err) => {
 
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
-  constructor(private readonly httpAdapterHost: HttpAdapterHost) {}
+  constructor(
+    private readonly httpAdapterHost: HttpAdapterHost,
+    private configService: ConfigService,
+  ) {}
 
   catch(exception: Error, host: ArgumentsHost): void {
     // In certain situations `httpAdapter` might not be available in the
@@ -58,7 +62,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
         ? exception.getStatus()
         : HttpStatus.INTERNAL_SERVER_ERROR;
 
-    if (process.env.NODE_ENV === 'development') {
+    if (this.configService.get<string>('NODE_ENV') === 'development') {
       httpAdapter.reply(
         ctx.getResponse(),
         {
