@@ -2,6 +2,7 @@ import { HttpStatus, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { AppException } from 'src/exceptions/exception';
+import { APIFeatures } from 'src/utils/api-features';
 import { CreateProductDto } from './dto/create-product.dto';
 import { CreateVariantDto } from './dto/create-variant.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
@@ -28,12 +29,20 @@ export class ProductsService {
     return await object.save();
   }
 
-  findAll(): Promise<ProductDocument[]> {
-    return this.productModel.find().exec();
+  async findAll(query: Record<string, any>): Promise<ProductDocument[]> {
+    const features = new APIFeatures<ProductDocument>(
+      this.productModel.find(),
+      query,
+    )
+      .filter()
+      .sort()
+      .limitFields()
+      .paginate();
+    return await features.query.lean();
   }
 
   findOne(id: string) {
-    return this.productModel.findById(id).exec();
+    return this.productModel.findById(id).lean().exec();
   }
 
   async update(
@@ -53,16 +62,14 @@ export class ProductsService {
     if (imgs && imgs.length > 0) {
       updateProductDtoWithImages.images = imgs;
     }
-    const product = await this.productModel.findByIdAndUpdate(
-      id,
-      updateProductDtoWithImages,
-      { new: true },
-    );
+    const product = await this.productModel
+      .findByIdAndUpdate(id, updateProductDtoWithImages, { new: true })
+      .lean();
     return product;
   }
 
   async remove(id: string) {
-    await this.productModel.findByIdAndDelete(id).exec();
+    await this.productModel.findByIdAndDelete(id).lean().exec();
     return {};
   }
 

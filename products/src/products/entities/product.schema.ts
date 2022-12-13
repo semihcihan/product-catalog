@@ -39,3 +39,11 @@ export class Product {
 }
 
 export const ProductSchema = SchemaFactory.createForClass(Product);
+
+export const ProductSchemaWithMiddlewares = () => {
+  const schema = ProductSchema;
+  schema.pre(/find.*/, function () {
+    this.populate('categories');
+  });
+  return schema;
+};
