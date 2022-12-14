@@ -16,6 +16,7 @@ import { JWTVerifier } from './middlewares/jwt-verifier.middleware';
 import { AnalyticsModule } from './analytics/analytics.module';
 import extractJwtUser from './middlewares/extract-jwt-user.middleware';
 import { Logger } from './middlewares/logger.middleware';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 
 ConfigModule.forRoot({
   isGlobal: true,
@@ -39,6 +40,14 @@ ConfigModule.forRoot({
     ProductsModule,
     CategoriesModule,
     AnalyticsModule,
+    ThrottlerModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        ttl: 60 * 60,
+        limit: +configService.get<string>('MAX_NUMBER_OF_REQUESTS_PER_HOUR'),
+      }),
+    }),
   ],
   controllers: [AppController],
   providers: [
@@ -46,6 +55,10 @@ ConfigModule.forRoot({
     {
       provide: APP_GUARD,
       useClass: RolesGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
     },
   ],
 })

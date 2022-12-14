@@ -28,12 +28,17 @@
     "@nestjs/mongoose": "^9.2.1",
     "@nestjs/platform-express": "^9.0.0",
     "@nestjs/swagger": "^6.1.4",
+    "@nestjs/throttler": "^3.1.0",
+    "body-parser": "^1.20.1",
+    "express-mongo-sanitize": "^2.2.0",
     "express-oauth2-jwt-bearer": "^1.2.0",
+    "helmet": "^6.0.1",
     "mongoose": "^6.8.0",
     "reflect-metadata": "^0.1.13",
     "rimraf": "^3.0.2",
     "rxjs": "^7.2.0",
-    "sharp": "^0.31.2"
+    "sharp": "^0.31.2",
+    "xss-clean": "^0.1.1"
   },
   "devDependencies": {
     "@nestjs/cli": "^9.0.0",

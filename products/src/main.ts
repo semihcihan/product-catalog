@@ -3,6 +3,8 @@ import { ConfigService } from '@nestjs/config';
 import { HttpAdapterHost, NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './exceptions/exception.filter';
+import helmet from 'helmet';
+import { json, urlencoded } from 'body-parser';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -14,6 +16,13 @@ async function bootstrap() {
     defaultVersion: '1',
     type: VersioningType.URI,
   });
+
+  app.enableCors();
+  app.use(helmet());
+
+  app.use(json({ limit: '10kb' }));
+  app.use(urlencoded({ extended: true, limit: '10kb' }));
+
   await app.listen(configService.get('PORT'));
 }
 bootstrap();
