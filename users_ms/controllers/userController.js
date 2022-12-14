@@ -26,6 +26,7 @@ exports.createUser = catchAsync(async (req, res, next) => {
     try {
       await authService.createAuth0User(req.body.email, req.body.password, {
         appUserId: newUser._id,
+        role: req.body.role,
       });
     } catch (e) {
       await newUser.delete();
@@ -34,6 +35,7 @@ exports.createUser = catchAsync(async (req, res, next) => {
   } else {
     await authService.updateAuth0UserMetaData(req.user.sub, {
       appUserId: newUser._id,
+      role: req.body.role,
     });
   }
 
@@ -98,6 +100,17 @@ exports.putUser = catchAsync(async (req, res, next) => {
     }
   );
 
+  if (req.body.role) {
+    const auth0User = await authService.getUserFromAuthWithAppId(id);
+    if (!auth0User) {
+      return next(new AppError('No document found with that ID', 404));
+    }
+
+    await authService.updateAuth0UserMetaData(auth0User.user_id, {
+      role: req.body.role,
+    });
+  }
+
   logRequest(req, 'user.update');
 
   res.status(200).json({
@@ -127,6 +140,17 @@ exports.patchUser = catchAsync(async (req, res, next) => {
       runValidators: true,
     }
   );
+
+  if (req.body.role) {
+    const auth0User = await authService.getUserFromAuthWithAppId(id);
+    if (!auth0User) {
+      return next(new AppError('No document found with that ID', 404));
+    }
+
+    await authService.updateAuth0UserMetaData(auth0User.user_id, {
+      role: req.body.role,
+    });
+  }
 
   logRequest(req, 'user.patch');
 
@@ -199,12 +223,10 @@ exports.getUsers = catchAsync(async (req, res, next) => {
     .sort()
     .limitFields()
     .paginate();
-  // const doc = await features.query.explain();
   const doc = await features.query;
 
   logRequest(req, 'user.find');
 
-  // SEND RESPONSE
   res.status(200).json({
     status: 'success',
     results: doc.length,
