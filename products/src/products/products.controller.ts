@@ -20,12 +20,15 @@ import { UpdateVariantDto } from './dto/update-variant.dto';
 import { CreateVariantDto } from './dto/create-variant.dto';
 import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { SharpPipe } from 'src/pipes/sharp.pipe';
+import { Roles } from 'src/auth/roles.decorator';
+import { Role } from 'src/auth/roles.enum';
 
 @Controller('products')
 export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
 
   @Post()
+  @Roles(Role.Admin)
   @UseInterceptors(FilesInterceptor('images'))
   async create(
     @Body() createProductDto: CreateProductDto,
@@ -46,6 +49,7 @@ export class ProductsController {
   }
 
   @Patch(':id')
+  @Roles(Role.Admin)
   @UseInterceptors(FilesInterceptor('images'))
   async update(
     @Param('id') id: string,
@@ -57,6 +61,7 @@ export class ProductsController {
   }
 
   @Delete(':id')
+  @Roles(Role.Admin)
   @HttpCode(HttpStatus.NO_CONTENT)
   async remove(@Param('id') id: string) {
     return await this.productsService.remove(id);
@@ -65,6 +70,7 @@ export class ProductsController {
   //variants
 
   @Patch(':id/variants/:variantId')
+  @Roles(Role.Admin)
   async updateVariant(
     @Param('id') id: string,
     @Param('variantId') variantId: string,
@@ -78,6 +84,7 @@ export class ProductsController {
   }
 
   @Delete(':id/variants/:variantId')
+  @Roles(Role.Admin)
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteVariant(
     @Param('id') id: string,
@@ -87,6 +94,7 @@ export class ProductsController {
   }
 
   @Patch(':id/variants/')
+  @Roles(Role.Admin)
   async updateVariants(
     @Param('id') id: string,
     @Body() variants: CreateVariantDto[],
@@ -97,6 +105,7 @@ export class ProductsController {
   //images
 
   @Patch(':id/images/:imageId')
+  @Roles(Role.Admin)
   @UseInterceptors(FileInterceptor('image'))
   async updateImage(
     @Param('id') id: string,
@@ -108,6 +117,7 @@ export class ProductsController {
   }
 
   @Delete(':id/images/:imageId')
+  @Roles(Role.Admin)
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteImage(
     @Param('id') id: string,
@@ -117,6 +127,7 @@ export class ProductsController {
   }
 
   @Patch(':id/images/')
+  @Roles(Role.Admin)
   @UseInterceptors(FilesInterceptor('images'))
   async updateImages(
     @Param('id') id: string,

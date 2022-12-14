@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
+import { APIFeatures } from 'src/utils/api-features';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
 import { Category, CategoryDocument } from './entities/category.schema';
@@ -17,8 +18,16 @@ export class CategoriesService {
     return await object.save();
   }
 
-  findAll(): Promise<CategoryDocument[]> {
-    return this.categoryModel.find().exec();
+  async findAll(query: Record<string, any>): Promise<CategoryDocument[]> {
+    const features = new APIFeatures<CategoryDocument>(
+      this.categoryModel.find(),
+      query,
+    )
+      .filter()
+      .sort()
+      .limitFields()
+      .paginate();
+    return await features.query.lean();
   }
 
   findOne(id: string): Promise<CategoryDocument> {
