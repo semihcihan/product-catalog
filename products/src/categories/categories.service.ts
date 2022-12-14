@@ -14,8 +14,7 @@ export class CategoriesService {
   async create(
     createCategoryDto: CreateCategoryDto,
   ): Promise<CategoryDocument> {
-    const object = new this.categoryModel(createCategoryDto);
-    return await object.save();
+    return await this.categoryModel.create(createCategoryDto);
   }
 
   async findAll(query: Record<string, any>): Promise<CategoryDocument[]> {

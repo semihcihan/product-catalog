@@ -13,7 +13,9 @@ import { CategoriesModule } from './categories/categories.module';
 import { APP_GUARD } from '@nestjs/core';
 import { RolesGuard } from './auth/roles.guard';
 import { JWTVerifier } from './middlewares/jwt-verifier.middleware';
+import { AnalyticsModule } from './analytics/analytics.module';
 import extractJwtUser from './middlewares/extract-jwt-user.middleware';
+import { Logger } from './middlewares/logger.middleware';
 
 ConfigModule.forRoot({
   isGlobal: true,
@@ -36,6 +38,7 @@ ConfigModule.forRoot({
     }),
     ProductsModule,
     CategoriesModule,
+    AnalyticsModule,
   ],
   controllers: [AppController],
   providers: [
@@ -66,5 +69,7 @@ export class AppModule implements NestModule {
         method: RequestMethod.PUT,
       },
     );
+
+    consumer.apply(Logger).forRoutes('*');
   }
 }
