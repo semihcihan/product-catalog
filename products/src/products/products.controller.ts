@@ -35,17 +35,30 @@ export class ProductsController {
     @UploadedFiles(SharpPipe)
     images: Array<string>,
   ) {
-    return await this.productsService.create(createProductDto, images);
+    const res = await this.productsService.create(createProductDto, images);
+    return {
+      status: 'success',
+      data: res,
+    };
   }
 
   @Get()
   async findAll(@Query() query: Record<string, any>) {
-    return await this.productsService.findAll(query);
+    const res = await this.productsService.findAll(query);
+    return {
+      status: 'success',
+      length: res.length,
+      data: res,
+    };
   }
 
   @Get(':id')
   async findOne(@Param('id') id: string) {
-    return await this.productsService.findOne(id);
+    const res = await this.productsService.findOne(id);
+    return {
+      status: 'success',
+      data: res,
+    };
   }
 
   @Patch(':id')
@@ -57,14 +70,22 @@ export class ProductsController {
     @UploadedFiles(SharpPipe)
     images: Array<string>,
   ) {
-    return await this.productsService.update(id, updateProductDto, images);
+    const res = await this.productsService.update(id, updateProductDto, images);
+    return {
+      status: 'success',
+      data: res,
+    };
   }
 
   @Delete(':id')
   @Roles(Role.Admin)
   @HttpCode(HttpStatus.NO_CONTENT)
   async remove(@Param('id') id: string) {
-    return await this.productsService.remove(id);
+    await this.productsService.remove(id);
+    return {
+      status: 'success',
+      data: {},
+    };
   }
 
   //variants
@@ -76,11 +97,15 @@ export class ProductsController {
     @Param('variantId') variantId: string,
     @Body() updateVariantDto: UpdateVariantDto,
   ) {
-    return await this.productsService.updateVariant(
+    const res = await this.productsService.updateVariant(
       id,
       variantId,
       updateVariantDto,
     );
+    return {
+      status: 'success',
+      data: res,
+    };
   }
 
   @Delete(':id/variants/:variantId')
@@ -90,7 +115,11 @@ export class ProductsController {
     @Param('id') id: string,
     @Param('variantId') variantId: string,
   ) {
-    return await this.productsService.deleteVariant(id, variantId);
+    await this.productsService.deleteVariant(id, variantId);
+    return {
+      status: 'success',
+      data: {},
+    };
   }
 
   @Patch(':id/variants/')
@@ -99,7 +128,11 @@ export class ProductsController {
     @Param('id') id: string,
     @Body() variants: CreateVariantDto[],
   ) {
-    return await this.productsService.updateVariants(id, variants);
+    const res = await this.productsService.updateVariants(id, variants);
+    return {
+      status: 'success',
+      data: res,
+    };
   }
 
   //images
@@ -113,7 +146,11 @@ export class ProductsController {
     @UploadedFile(SharpPipe)
     image: string,
   ) {
-    return await this.productsService.updateImage(id, imageId, image);
+    const res = await this.productsService.updateImage(id, imageId, image);
+    return {
+      status: 'success',
+      data: res,
+    };
   }
 
   @Delete(':id/images/:imageId')
@@ -123,7 +160,11 @@ export class ProductsController {
     @Param('id') id: string,
     @Param('imageId') imageId: string,
   ) {
-    return await this.productsService.deleteImage(id, imageId);
+    await this.productsService.deleteImage(id, imageId);
+    return {
+      status: 'success',
+      data: {},
+    };
   }
 
   @Patch(':id/images/')
@@ -134,6 +175,10 @@ export class ProductsController {
     @UploadedFiles(SharpPipe)
     images: Array<string>,
   ) {
-    return await this.productsService.updateImages(id, images);
+    const res = await this.productsService.updateImages(id, images);
+    return {
+      status: 'success',
+      data: res,
+    };
   }
 }

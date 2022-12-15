@@ -7,6 +7,8 @@ import {
   Param,
   Delete,
   Query,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
 import { Roles } from 'src/auth/roles.decorator';
 import { Role } from 'src/auth/roles.enum';
@@ -21,31 +23,53 @@ export class CategoriesController {
   @Post()
   @Roles(Role.Admin)
   async create(@Body() createCategoryDto: CreateCategoryDto) {
-    return await this.categoriesService.create(createCategoryDto);
+    const res = await this.categoriesService.create(createCategoryDto);
+    return {
+      status: 'success',
+      data: res,
+    };
   }
 
   @Get()
   async findAll(@Query() query: Record<string, any>) {
-    return await this.categoriesService.findAll(query);
+    const res = await this.categoriesService.findAll(query);
+    return {
+      status: 'success',
+      length: res.length,
+      data: res,
+    };
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.categoriesService.findOne(id);
+  async findOne(@Param('id') id: string) {
+    const res = await this.categoriesService.findOne(id);
+    return {
+      status: 'success',
+      data: res,
+    };
   }
 
   @Patch(':id')
   @Roles(Role.Admin)
-  update(
+  async update(
     @Param('id') id: string,
     @Body() updateCategoryDto: UpdateCategoryDto,
   ) {
-    return this.categoriesService.update(id, updateCategoryDto);
+    const res = await this.categoriesService.update(id, updateCategoryDto);
+    return {
+      status: 'success',
+      data: res,
+    };
   }
 
   @Delete(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
   @Roles(Role.Admin)
-  remove(@Param('id') id: string) {
-    return this.categoriesService.remove(id);
+  async remove(@Param('id') id: string) {
+    await this.categoriesService.remove(id);
+    return {
+      status: 'success',
+      data: {},
+    };
   }
 }

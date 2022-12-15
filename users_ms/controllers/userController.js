@@ -213,7 +213,7 @@ exports.deleteUser = catchAsync(async (req, res, next) => {
 
   res.status(204).json({
     status: 'success',
-    data: { id },
+    data: {},
   });
 });
 

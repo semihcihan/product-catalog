@@ -6,7 +6,12 @@ export class AnalyticsController {
   constructor(private readonly analyticsService: AnalyticsService) {}
 
   @Get()
-  findAll(@Query() query: Record<string, any>) {
-    return this.analyticsService.findAll(query);
+  async findAll(@Query() query: Record<string, any>) {
+    const res = await this.analyticsService.findAll(query);
+    return {
+      status: 'success',
+      length: res.length,
+      data: res,
+    };
   }
 }
