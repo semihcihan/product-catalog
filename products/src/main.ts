@@ -1,4 +1,4 @@
-import { VersioningType } from '@nestjs/common';
+import { ValidationPipe, VersioningType } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { HttpAdapterHost, NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
@@ -8,12 +8,22 @@ import { json, urlencoded } from 'body-parser';
 import xss = require('xss-clean');
 import mongoSanitize = require('express-mongo-sanitize');
 import hpp = require('hpp');
+import { ERROR_CODES } from './utils/error-codes';
+import { AppException } from './exceptions/exception';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const httpAdapter = app.get(HttpAdapterHost);
   const configService = app.get(ConfigService);
   app.useGlobalFilters(new AllExceptionsFilter(httpAdapter, configService));
+  app.useGlobalPipes(
+    new ValidationPipe({
+      exceptionFactory: (errors) => {
+        throw new AppException(errors, ERROR_CODES.VALIDATION_PIPE);
+      },
+      forbidUnknownValues: false,
+    }),
+  );
   app.setGlobalPrefix('api');
   app.enableVersioning({
     defaultVersion: '1',

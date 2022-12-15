@@ -4,7 +4,7 @@ export class AppException extends HttpException {
   isOperational: boolean;
 
   constructor(
-    response: string | Record<string, any>,
+    response: string | Record<string, any> | any,
     status: number,
     options?: HttpExceptionOptions,
   ) {

@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { HttpAdapterHost } from '@nestjs/core';
+import { ERROR_CODES } from 'src/utils/error-codes';
 import { AppException } from './exception';
 
 const handleCastErrorDB = (err) => {
@@ -33,6 +34,30 @@ const handleValidationErrorDB = (err) => {
   return new AppException(message, HttpStatus.BAD_REQUEST);
 };
 
+const handleValidationErrorPipe = (err) => {
+  if (
+    !(
+      err.response &&
+      Array.isArray(err.response) &&
+      err.response.length > 0 &&
+      err.response[0].constraints
+    )
+  ) {
+    return new AppException('Invalid input data.', HttpStatus.BAD_REQUEST);
+  }
+  const errors = err.response.map((e) =>
+    Object.values(e.constraints).join('. '),
+  );
+  const message = `Invalid input data. ${errors.join('. ')}`;
+  return new AppException(message, HttpStatus.BAD_REQUEST);
+};
+
+const handleJWTError = () =>
+  new AppException(
+    'Invalid token. Please log in again!',
+    HttpStatus.UNAUTHORIZED,
+  );
+
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
   constructor(
@@ -44,7 +69,6 @@ export class AllExceptionsFilter implements ExceptionFilter {
     // In certain situations `httpAdapter` might not be available in the
     // constructor method, thus we should resolve it here.
     const { httpAdapter } = this.httpAdapterHost;
-
     if (exception.name === 'CastError') {
       exception = handleCastErrorDB(exception);
     }
@@ -53,6 +77,12 @@ export class AllExceptionsFilter implements ExceptionFilter {
     }
     if (exception.name === 'ValidationError') {
       exception = handleValidationErrorDB(exception);
+    }
+    if ((exception as any).status === ERROR_CODES.VALIDATION_PIPE) {
+      exception = handleValidationErrorPipe(exception);
+    }
+    if (exception.name === 'InvalidTokenError') {
+      exception = handleJWTError();
     }
 
     const ctx = host.switchToHttp();
