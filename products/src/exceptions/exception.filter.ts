@@ -78,7 +78,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
         httpAdapter.reply(
           ctx.getResponse(),
           {
-            status: httpStatus,
+            status: 'error',
             message: exception.message,
           },
           httpStatus,
