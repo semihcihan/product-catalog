@@ -33,7 +33,12 @@ export class Variant {
         currency: { type: String },
       },
     ]),
-    validate: (v: any) => Array.isArray(v) && v.length > 0,
+    validate: (v: { price: number; currency: string }[]) => {
+      if (!Array.isArray(v) || v.length === 0) {
+        return false;
+      }
+      return !v.some((el) => !el.price || !el.currency);
+    },
   })
   prices: Record<string, any>[];
 

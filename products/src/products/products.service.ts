@@ -89,7 +89,7 @@ export class ProductsService {
       );
     }
     variant.set(updateVariantDto);
-    await variant.save();
+    await product.save();
     return product;
   }
 

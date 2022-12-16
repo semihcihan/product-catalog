@@ -32,6 +32,8 @@ export class Logger implements NestMiddleware {
       action = 'product.variant';
     } else if (req.baseUrl.includes('categories')) {
       action = 'category';
+    } else if (req.baseUrl.includes('analytics')) {
+      action = 'analytics';
     }
 
     return action + '.' + req.method;
