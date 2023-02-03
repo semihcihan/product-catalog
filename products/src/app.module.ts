@@ -77,6 +77,10 @@ export class AppModule implements NestModule {
         path: '*',
         method: RequestMethod.PUT,
       },
+      {
+        path: '*/analytics',
+        method: RequestMethod.GET,
+      },
     );
 
     consumer.apply(Logger).forRoutes('*');
